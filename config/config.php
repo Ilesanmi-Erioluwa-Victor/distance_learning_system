@@ -30,26 +30,26 @@ if (class_exists('Dotenv\\Dotenv')) {
 }
 
 // -----------------------------
-// ENV FALLBACKS (InfinityFree-safe)
+// ENV FALLBACKS (Render + InfinityFree-safe)
 // -----------------------------
 if (!defined('DB_HOST')) {
-    define('DB_HOST', $_ENV['DB_HOST'] ?? 'localhost');
+    define('DB_HOST', $_ENV['MYSQL_HOST'] ?? $_ENV['DB_HOST'] ?? 'localhost');
 }
 
 if (!defined('DB_NAME')) {
-    define('DB_NAME', $_ENV['DB_NAME'] ?? 'wbdls');
+    define('DB_NAME', $_ENV['MYSQL_DATABASE'] ?? $_ENV['DB_NAME'] ?? 'wbdls');
 }
 
 if (!defined('DB_USER')) {
-    define('DB_USER', $_ENV['DB_USER'] ?? 'root');
+    define('DB_USER', $_ENV['MYSQL_USER'] ?? $_ENV['DB_USER'] ?? 'root');
 }
 
 if (!defined('DB_PASS')) {
-    define('DB_PASS', $_ENV['DB_PASS'] ?? '');
+    define('DB_PASS', $_ENV['MYSQL_PASSWORD'] ?? $_ENV['DB_PASS'] ?? '');
 }
 
 if (!defined('BASE_URL')) {
-    define('BASE_URL', $_ENV['BASE_URL'] ?? 'http://localhost:8000');
+    define('BASE_URL', $_ENV['RENDER_EXTERNAL_URL'] ?? $_ENV['BASE_URL'] ?? 'http://localhost:8000');
 }
 
 if (!defined('MAIL_USER')) {
