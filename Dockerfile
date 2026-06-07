@@ -13,6 +13,10 @@ RUN apt-get update && apt-get install -y \
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
+# Apache config to allow .htaccess
+RUN echo '<Directory /var/www/html>\n    AllowOverride All\n    Require all granted\n</Directory>' > /etc/apache2/conf-available/allow-override.conf \
+    && a2enconf allow-override
+
 # Set working directory
 WORKDIR /var/www/html
 
