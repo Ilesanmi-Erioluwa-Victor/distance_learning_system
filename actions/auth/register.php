@@ -1,0 +1,62 @@
+<?php
+require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../config/mail.php';
+require_once __DIR__ . '/../../includes/functions.php';
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') { redirect('/register.php'); }
+validateCsrf();
+
+$first = sanitize($_POST['first_name'] ?? '');
+$last  = sanitize($_POST['last_name'] ?? '');
+$email = filter_var(trim($_POST['email'] ?? ''), FILTER_VALIDATE_EMAIL);
+$password = $_POST['password'] ?? '';
+$confirm  = $_POST['confirm_password'] ?? '';
+$role = $_POST['role'] ?? 'student';
+
+if (!$first || !$last || !$email || !$password || !$confirm) {
+    setFlash('error', 'All fields are required.');
+    redirect('/register.php');
+}
+if (strlen($password) < 6) {
+    setFlash('error', 'Password must be at least 6 characters.');
+    redirect('/register.php');
+}
+if ($password !== $confirm) {
+    setFlash('error', 'Passwords do not match.');
+    redirect('/register.php');
+}
+if (!in_array($role, ['student', 'instructor'], true)) {
+    setFlash('error', 'Invalid role.');
+    redirect('/register.php');
+}
+
+$pdo = Database::getConnection();
+$stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
+$stmt->execute([$email]);
+if ($stmt->fetch()) {
+    setFlash('error', 'Email already registered.');
+    redirect('/register.php');
+}
+
+$hash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
+$otp  = generateOTP(6);
+$otpExpires = (new DateTime('+10 minutes'))->format('Y-m-d H:i:s');
+
+$stmt = $pdo->prepare("
+    INSERT INTO users (first_name, last_name, email, password, role, is_active, is_verified, otp_code, otp_expires_at)
+    VALUES (?, ?, ?, ?, ?, 1, 0, ?, ?)
+");
+$stmt->execute([$first, $last, $email, $hash, $role, $otp, $otpExpires]);
+
+// Try to send email
+$body = getOtpEmailHtml($first, $otp);
+$sent = sendEmail($email, $first, 'Verify your WBDLS account', $body);
+
+if ($sent) {
+    setFlash('success', 'Account created! Check your email for the verification code.');
+} else {
+    // Fall back: still show the OTP on screen for development
+    setFlash('warning', 'Account created! Email could not be sent. For development, your code is: ' . $otp);
+}
+redirect('/verify_email.php?email=' . urlencode($email));

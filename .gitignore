@@ -1,0 +1,13 @@
+.env
+vendor/
+uploads/*
+!uploads/.gitkeep
+!uploads/profiles/.gitkeep
+!uploads/assignments/.gitkeep
+!uploads/resources/.gitkeep
+!uploads/thumbnails/.gitkeep
+*.log
+.DS_Store
+.idea/
+.vscode/
+.env.example

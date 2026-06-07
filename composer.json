@@ -1,0 +1,16 @@
+{
+    "name": "dspoly/wbdls",
+    "description": "Web-Based Distance Learning System for Delta State Polytechnic, Otefe-Oghara",
+    "type": "project",
+    "require": {
+        "php": ">=8.1",
+        "phpmailer/phpmailer": "^6.9",
+        "vlucas/phpdotenv": "^5.6"
+    },
+    "autoload": {
+        "files": [
+            "includes/functions.php",
+            "includes/auth.php"
+        ]
+    }
+}

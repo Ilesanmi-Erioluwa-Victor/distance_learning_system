@@ -1,0 +1,56 @@
+/* RESPONSIVE */
+
+/* TABLET */
+@media (max-width: 1024px) {
+    .course-detail { grid-template-columns: 1fr; }
+    .course-sidebar-card { position: static; }
+    .learn-layout { grid-template-columns: 1fr; }
+    .learn-sidebar { position: static; max-height: none; }
+    .grid-4 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* MOBILE */
+@media (max-width: 768px) {
+    .hamburger { display: flex; }
+    .sidebar { transform: translateX(-100%); }
+    body.sidebar-open .sidebar { transform: translateX(0); }
+    body.sidebar-open .sidebar-overlay { display: block; }
+    .main-content.with-sidebar { margin-left: 0; padding: 70px 16px 40px; }
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    .form-row { grid-template-columns: 1fr; }
+    .public-nav { padding: 0 16px; }
+    .public-nav-links { gap: 12px; }
+    .public-nav-links a:not(.btn) { display: none; }
+    h1 { font-size: 1.6rem; }
+    h2 { font-size: 1.3rem; }
+    .auth-card { padding: 24px 20px; }
+    .modal-box { max-width: 100%; }
+    .container { padding: 0 14px; }
+    .dashboard-stats { grid-template-columns: 1fr; }
+    .page-header { flex-direction: column; align-items: flex-start; }
+    .quiz-header { flex-direction: column; gap: 8px; text-align: center; }
+    .learn-layout { gap: 16px; }
+    .lesson-content { padding: 18px; }
+    .otp-input-group input { width: 40px; height: 48px; font-size: 1.2rem; }
+}
+
+/* SMALL PHONE */
+@media (max-width: 480px) {
+    body { font-size: 14px; }
+    h1 { font-size: 1.4rem; }
+    h2 { font-size: 1.2rem; }
+    h3 { font-size: 1.05rem; }
+    .btn { padding: 8px 14px; font-size: .9rem; }
+    .btn-lg { padding: 12px 20px; }
+    .stat-card { padding: 14px; }
+    .stat-card .stat-icon { width: 44px; height: 44px; font-size: 1.3rem; }
+    .stat-card .stat-number { font-size: 1.3rem; }
+    .table th, .table td { padding: 8px 10px; font-size: .85rem; }
+    .auth-card { padding: 20px 16px; }
+    .auth-card h2 { font-size: 1.1rem; }
+    .modal-body, .modal-header, .modal-footer { padding: 14px; }
+    .otp-input-group { gap: 4px; }
+    .otp-input-group input { width: 36px; height: 44px; font-size: 1.1rem; }
+    .role-selector { flex-direction: column; }
+}

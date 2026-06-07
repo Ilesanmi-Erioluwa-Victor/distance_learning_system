@@ -1,0 +1,1677 @@
+================================================================================
+  OPENCODE AGENT PROMPT — FULL PROJECT BUILD
+  PROJECT: DESIGN AND IMPLEMENTATION OF A WEB-BASED SYSTEM FOR DISTANCE LEARNING
+  CASE STUDY: DELTA STATE POLYTECHNIC, OTEFE-OGHARA
+  STACK: HTML, CSS, PHP, MySQL
+================================================================================
+
+READ THIS ENTIRE DOCUMENT BEFORE WRITING A SINGLE LINE OF CODE.
+FOLLOW EVERY SECTION IN ORDER. DO NOT SKIP ANY SECTION.
+THIS IS A COMPLETE, PRODUCTION-READY, DEPLOYABLE PROJECT.
+
+--------------------------------------------------------------------------------
+SECTION 0: PROJECT OVERVIEW
+--------------------------------------------------------------------------------
+
+You are building a full Web-Based Distance Learning System (WBDLS) for
+Delta State Polytechnic, Otefe-Oghara. The system allows instructors and
+students to participate fully in distance learning activities while
+geographically separated. The internet is the sole delivery medium.
+
+The abstract explicitly states the system was developed using:
+  - HTML (structure)
+  - CSS  (styling)
+  - PHP  (server-side logic)
+  - MySQL (database — the standard companion to PHP)
+
+The system handles THREE user roles:
+  1. ADMIN        — manages the entire platform
+  2. INSTRUCTOR   — creates and manages course content, grades students
+  3. STUDENT      — enrolls in courses, consumes content, submits assignments
+
+The final product must be:
+  - Fully functional with zero placeholder pages
+  - Deployable and live on the internet
+  - Mobile-responsive (CSS media queries)
+  - Secure (sessions, prepared statements, input validation, password hashing)
+  - Well-documented (README.md + inline comments throughout PHP files)
+
+--------------------------------------------------------------------------------
+SECTION 1: TECHNOLOGY STACK (NON-NEGOTIABLE — FROM THE ABSTRACT)
+--------------------------------------------------------------------------------
+
+FRONTEND:
+  - HTML5              (semantic markup: <header>, <nav>, <main>, <section>, <article>)
+  - CSS3               (custom CSS — NO Bootstrap, NO Tailwind. Write all CSS manually)
+    · CSS Variables     (for color theming)
+    · Flexbox + Grid    (layouts)
+    · Media Queries     (mobile responsiveness — breakpoints: 768px, 480px)
+    · CSS Animations    (subtle transitions, hover effects)
+
+BACKEND:
+  - PHP 8.1+           (procedural style is acceptable but prefer OOP with classes)
+  - PDO                (PHP Data Objects — for all database queries, NO mysqli directly)
+  - Sessions           (PHP native sessions for authentication — $_SESSION)
+  - Password hashing   (password_hash() / password_verify() — NEVER md5 or sha1)
+
+DATABASE:
+  - MySQL 8.0+
+    · All queries use PDO prepared statements (NO raw string interpolation in SQL)
+    · InnoDB engine (supports foreign keys and transactions)
+    · utf8mb4 charset (supports all Unicode characters including emojis)
+
+FILE UPLOADS:
+  - PHP move_uploaded_file() + server-side type/size validation
+  - Uploads folder: /uploads/ (outside webroot is ideal; if not possible, add .htaccess
+    to deny PHP execution inside /uploads/)
+
+EMAIL:
+  - PHPMailer library (composer require phpmailer/phpmailer)
+  - Send via Gmail SMTP with App Password
+  - Use for: OTP verification, password reset, enrollment confirmation
+
+DEPLOYMENT:
+  - Hosting:   InfinityFree (free) OR Hostinger shared hosting (paid, recommended)
+    · Both support PHP 8+ and MySQL
+  - Alternative free: 000webhost.com or render.com (PHP Docker)
+  - Domain:    Use hosting provider's free subdomain or a custom .com.ng domain
+  - Database:  MySQL provided by the hosting panel (cPanel → MySQL Databases)
+
+DEPENDENCIES (managed via Composer):
+  - phpmailer/phpmailer    (email sending)
+  - vlucas/phpdotenv       (environment variables from .env file)
+
+--------------------------------------------------------------------------------
+SECTION 2: PROJECT FOLDER STRUCTURE
+--------------------------------------------------------------------------------
+
+wbdls/                              ← project root (this is the webroot on hosting)
+├── .env                            ← environment variables (NEVER commit to git)
+├── .env.example                    ← template with keys but no values
+├── .htaccess                       ← URL rewriting + security headers
+├── composer.json
+├── composer.lock
+├── vendor/                         ← Composer packages (gitignored)
+├── README.md
+│
+├── config/
+│   ├── database.php                ← PDO connection singleton
+│   ├── config.php                  ← loads .env, defines constants (BASE_URL, etc.)
+│   └── mail.php                    ← PHPMailer setup function
+│
+├── includes/
+│   ├── auth.php                    ← session helpers: isLoggedIn(), requireRole(), getCurrentUser()
+│   ├── functions.php               ← utility functions: sanitize(), generateOTP(), formatDate(), redirect()
+│   ├── header.php                  ← HTML <head> + top navbar (included in every page)
+│   └── footer.php                  ← HTML footer (included in every page)
+│
+├── assets/
+│   ├── css/
+│   │   ├── main.css                ← global styles, CSS variables, resets, typography
+│   │   ├── auth.css                ← login/register page styles
+│   │   ├── dashboard.css           ← shared dashboard layout styles
+│   │   ├── course.css              ← course pages styles
+│   │   └── responsive.css          ← all media queries
+│   ├── js/
+│   │   ├── main.js                 ← DOM helpers, mobile menu toggle, dropdowns
+│   │   ├── quiz.js                 ← quiz timer + navigation logic (vanilla JS)
+│   │   └── editor.js               ← simple rich text helpers for lesson content
+│   └── images/
+│       ├── logo.png                ← Delta State Polytechnic branding
+│       └── default-avatar.png
+│
+├── uploads/                        ← user-uploaded files (profile photos, assignments, resources)
+│   ├── profiles/
+│   ├── assignments/
+│   ├── resources/
+│   └── thumbnails/
+│   (.htaccess inside here: deny PHP execution)
+│
+├── actions/                        ← form POST handlers (all return via redirect)
+│   ├── auth/
+│   │   ├── register.php
+│   │   ├── login.php
+│   │   ├── logout.php
+│   │   ├── verify_otp.php
+│   │   ├── resend_otp.php
+│   │   ├── forgot_password.php
+│   │   └── reset_password.php
+│   ├── student/
+│   │   ├── enroll.php
+│   │   ├── drop_course.php
+│   │   ├── complete_lesson.php
+│   │   ├── submit_assignment.php
+│   │   └── submit_quiz.php
+│   ├── instructor/
+│   │   ├── create_course.php
+│   │   ├── update_course.php
+│   │   ├── delete_course.php
+│   │   ├── publish_course.php
+│   │   ├── create_module.php
+│   │   ├── update_module.php
+│   │   ├── delete_module.php
+│   │   ├── create_lesson.php
+│   │   ├── update_lesson.php
+│   │   ├── delete_lesson.php
+│   │   ├── create_assignment.php
+│   │   ├── grade_submission.php
+│   │   ├── create_quiz.php
+│   │   ├── save_questions.php
+│   │   ├── publish_quiz.php
+│   │   └── post_announcement.php
+│   └── admin/
+│       ├── toggle_user.php
+│       ├── delete_user.php
+│       ├── delete_course.php
+│       └── post_announcement.php
+│
+├── student/                        ← all student-facing pages (require STUDENT session)
+│   ├── dashboard.php
+│   ├── courses.php                 ← my enrolled courses
+│   ├── learn.php                   ← lesson viewer (?course_id=&lesson_id=)
+│   ├── assignments.php
+│   ├── quiz.php                    ← quiz attempt page
+│   ├── quiz_result.php
+│   ├── announcements.php
+│   ├── forum.php                   ← ?course_id=
+│   ├── forum_post.php              ← view single post + replies
+│   ├── profile.php
+│   └── notifications.php
+│
+├── instructor/                     ← instructor-facing pages (require INSTRUCTOR session)
+│   ├── dashboard.php
+│   ├── courses.php
+│   ├── create_course.php
+│   ├── edit_course.php             ← ?course_id=
+│   ├── course_builder.php          ← manage modules + lessons (?course_id=)
+│   ├── assignments.php
+│   ├── grade_submissions.php       ← ?assignment_id=
+│   ├── quiz_builder.php            ← ?course_id=
+│   ├── students.php                ← students enrolled in my courses
+│   ├── announcements.php
+│   └── profile.php
+│
+├── admin/                          ← admin-facing pages (require ADMIN session)
+│   ├── dashboard.php
+│   ├── users.php
+│   ├── courses.php
+│   ├── enrollments.php
+│   └── announcements.php
+│
+├── courses.php                     ← PUBLIC: course catalog (browse without login)
+├── course_detail.php               ← PUBLIC: single course info + enroll CTA (?id=)
+├── index.php                       ← PUBLIC: homepage / landing page
+├── login.php                       ← auth page
+├── register.php                    ← auth page
+├── verify_email.php                ← OTP verification page
+├── forgot_password.php
+└── reset_password.php
+
+--------------------------------------------------------------------------------
+SECTION 3: DATABASE SCHEMA (MySQL — run this as the SQL setup)
+--------------------------------------------------------------------------------
+
+Create a file: config/schema.sql
+Run it once on the MySQL database (via cPanel phpMyAdmin or CLI).
+
+---
+
+CREATE DATABASE IF NOT EXISTS wbdls CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE wbdls;
+
+-- USERS
+CREATE TABLE users (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    first_name  VARCHAR(100) NOT NULL,
+    last_name   VARCHAR(100) NOT NULL,
+    email       VARCHAR(255) NOT NULL UNIQUE,
+    password    VARCHAR(255) NOT NULL,
+    role        ENUM('admin','instructor','student') NOT NULL DEFAULT 'student',
+    profile_photo VARCHAR(255) DEFAULT NULL,
+    bio         TEXT DEFAULT NULL,
+    phone       VARCHAR(20) DEFAULT NULL,
+    is_active   TINYINT(1) NOT NULL DEFAULT 1,
+    is_verified TINYINT(1) NOT NULL DEFAULT 0,
+    otp_code    VARCHAR(10) DEFAULT NULL,
+    otp_expires_at DATETIME DEFAULT NULL,
+    created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- COURSES
+CREATE TABLE courses (
+    id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    instructor_id INT UNSIGNED NOT NULL,
+    title        VARCHAR(255) NOT NULL,
+    description  TEXT NOT NULL,
+    thumbnail    VARCHAR(255) DEFAULT NULL,
+    level        ENUM('Beginner','Intermediate','Advanced') NOT NULL DEFAULT 'Beginner',
+    category     VARCHAR(100) NOT NULL,
+    duration     VARCHAR(50) DEFAULT NULL,
+    is_published TINYINT(1) NOT NULL DEFAULT 0,
+    created_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (instructor_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- MODULES
+CREATE TABLE modules (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    course_id   INT UNSIGNED NOT NULL,
+    title       VARCHAR(255) NOT NULL,
+    description TEXT DEFAULT NULL,
+    sort_order  INT NOT NULL DEFAULT 0,
+    created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- LESSONS
+CREATE TABLE lessons (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    module_id   INT UNSIGNED NOT NULL,
+    title       VARCHAR(255) NOT NULL,
+    content     LONGTEXT DEFAULT NULL,   -- HTML rich text
+    video_url   VARCHAR(500) DEFAULT NULL,
+    file_path   VARCHAR(255) DEFAULT NULL,
+    duration    INT DEFAULT NULL,        -- minutes
+    sort_order  INT NOT NULL DEFAULT 0,
+    created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- ENROLLMENTS
+CREATE TABLE enrollments (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    student_id  INT UNSIGNED NOT NULL,
+    course_id   INT UNSIGNED NOT NULL,
+    status      ENUM('active','completed','dropped') NOT NULL DEFAULT 'active',
+    progress    DECIMAL(5,2) NOT NULL DEFAULT 0.00,
+    enrolled_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_enrollment (student_id, course_id),
+    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (course_id)  REFERENCES courses(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- LESSON PROGRESS
+CREATE TABLE lesson_progress (
+    id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    student_id   INT UNSIGNED NOT NULL,
+    lesson_id    INT UNSIGNED NOT NULL,
+    completed    TINYINT(1) NOT NULL DEFAULT 0,
+    completed_at DATETIME DEFAULT NULL,
+    UNIQUE KEY uq_progress (student_id, lesson_id),
+    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (lesson_id)  REFERENCES lessons(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- ASSIGNMENTS
+CREATE TABLE assignments (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    module_id   INT UNSIGNED NOT NULL,
+    title       VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    due_date    DATETIME NOT NULL,
+    max_score   INT NOT NULL DEFAULT 100,
+    file_path   VARCHAR(255) DEFAULT NULL,
+    created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- SUBMISSIONS
+CREATE TABLE submissions (
+    id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    assignment_id INT UNSIGNED NOT NULL,
+    student_id    INT UNSIGNED NOT NULL,
+    file_path     VARCHAR(255) DEFAULT NULL,
+    text_content  TEXT DEFAULT NULL,
+    score         INT DEFAULT NULL,
+    feedback      TEXT DEFAULT NULL,
+    status        ENUM('pending','submitted','graded','late') NOT NULL DEFAULT 'submitted',
+    submitted_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    graded_at     DATETIME DEFAULT NULL,
+    UNIQUE KEY uq_submission (assignment_id, student_id),
+    FOREIGN KEY (assignment_id) REFERENCES assignments(id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id)    REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- QUIZZES
+CREATE TABLE quizzes (
+    id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    course_id    INT UNSIGNED NOT NULL,
+    title        VARCHAR(255) NOT NULL,
+    description  TEXT DEFAULT NULL,
+    time_limit   INT DEFAULT NULL,         -- minutes; NULL = no limit
+    max_attempts INT NOT NULL DEFAULT 1,
+    pass_mark    INT NOT NULL DEFAULT 50,  -- percentage
+    is_published TINYINT(1) NOT NULL DEFAULT 0,
+    created_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- QUIZ QUESTIONS
+CREATE TABLE quiz_questions (
+    id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    quiz_id        INT UNSIGNED NOT NULL,
+    question_text  TEXT NOT NULL,
+    option_a       VARCHAR(500) NOT NULL,
+    option_b       VARCHAR(500) NOT NULL,
+    option_c       VARCHAR(500) NOT NULL,
+    option_d       VARCHAR(500) NOT NULL,
+    correct_answer ENUM('A','B','C','D') NOT NULL,
+    points         INT NOT NULL DEFAULT 1,
+    sort_order     INT NOT NULL DEFAULT 0,
+    FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- QUIZ ATTEMPTS
+CREATE TABLE quiz_attempts (
+    id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    quiz_id      INT UNSIGNED NOT NULL,
+    student_id   INT UNSIGNED NOT NULL,
+    answers      JSON NOT NULL,           -- {"question_id": "A", ...}
+    score        INT NOT NULL,
+    percentage   DECIMAL(5,2) NOT NULL,
+    passed       TINYINT(1) NOT NULL,
+    started_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    completed_at DATETIME DEFAULT NULL,
+    FOREIGN KEY (quiz_id)    REFERENCES quizzes(id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- ANNOUNCEMENTS
+CREATE TABLE announcements (
+    id        INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    author_id INT UNSIGNED NOT NULL,
+    course_id INT UNSIGNED DEFAULT NULL,  -- NULL = platform-wide
+    title     VARCHAR(255) NOT NULL,
+    content   TEXT NOT NULL,
+    target    ENUM('all','students','instructors') NOT NULL DEFAULT 'all',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+-- FORUM POSTS
+CREATE TABLE forum_posts (
+    id        INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    course_id INT UNSIGNED NOT NULL,
+    author_id INT UNSIGNED NOT NULL,
+    title     VARCHAR(255) NOT NULL,
+    content   TEXT NOT NULL,
+    is_pinned TINYINT(1) NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
+    FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- FORUM REPLIES
+CREATE TABLE forum_replies (
+    id        INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    post_id   INT UNSIGNED NOT NULL,
+    author_id INT UNSIGNED NOT NULL,
+    content   TEXT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (post_id)   REFERENCES forum_posts(id) ON DELETE CASCADE,
+    FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- NOTIFICATIONS
+CREATE TABLE notifications (
+    id        INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id   INT UNSIGNED NOT NULL,
+    message   VARCHAR(500) NOT NULL,
+    type      VARCHAR(50) NOT NULL,   -- 'enrollment','grade','announcement','assignment'
+    link      VARCHAR(255) DEFAULT NULL,
+    is_read   TINYINT(1) NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+---
+
+--------------------------------------------------------------------------------
+SECTION 4: CONFIG FILES
+--------------------------------------------------------------------------------
+
+--- config/config.php ---
+
+<?php
+require_once __DIR__ . '/../vendor/autoload.php';
+
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
+$dotenv->load();
+
+define('DB_HOST',     $_ENV['DB_HOST']);
+define('DB_NAME',     $_ENV['DB_NAME']);
+define('DB_USER',     $_ENV['DB_USER']);
+define('DB_PASS',     $_ENV['DB_PASS']);
+define('BASE_URL',    $_ENV['BASE_URL']);    // e.g., https://yoursite.com
+define('UPLOAD_DIR',  __DIR__ . '/../uploads/');
+define('UPLOAD_URL',  BASE_URL . '/uploads/');
+define('APP_NAME',    'WBDLS — Delta State Polytechnic');
+define('SESSION_NAME','wbdls_session');
+
+ini_set('session.cookie_httponly', 1);
+ini_set('session.use_strict_mode', 1);
+session_name(SESSION_NAME);
+session_start();
+
+--- config/database.php ---
+
+<?php
+require_once __DIR__ . '/config.php';
+
+class Database {
+    private static ?PDO $instance = null;
+
+    public static function getConnection(): PDO {
+        if (self::$instance === null) {
+            $dsn = 'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4';
+            $options = [
+                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES   => false,
+            ];
+            self::$instance = new PDO($dsn, DB_USER, DB_PASS, $options);
+        }
+        return self::$instance;
+    }
+}
+
+--- includes/auth.php ---
+
+<?php
+function isLoggedIn(): bool {
+    return isset($_SESSION['user_id']);
+}
+
+function requireLogin(): void {
+    if (!isLoggedIn()) {
+        header('Location: ' . BASE_URL . '/login.php?redirect=' . urlencode($_SERVER['REQUEST_URI']));
+        exit;
+    }
+}
+
+function requireRole(string ...$roles): void {
+    requireLogin();
+    if (!in_array($_SESSION['user_role'], $roles, true)) {
+        http_response_code(403);
+        include __DIR__ . '/../403.php';
+        exit;
+    }
+}
+
+function getCurrentUser(): array {
+    return [
+        'id'           => $_SESSION['user_id'],
+        'first_name'   => $_SESSION['user_first_name'],
+        'last_name'    => $_SESSION['user_last_name'],
+        'email'        => $_SESSION['user_email'],
+        'role'         => $_SESSION['user_role'],
+        'profile_photo'=> $_SESSION['user_photo'] ?? null,
+    ];
+}
+
+function setUserSession(array $user): void {
+    $_SESSION['user_id']         = $user['id'];
+    $_SESSION['user_first_name'] = $user['first_name'];
+    $_SESSION['user_last_name']  = $user['last_name'];
+    $_SESSION['user_email']      = $user['email'];
+    $_SESSION['user_role']       = $user['role'];
+    $_SESSION['user_photo']      = $user['profile_photo'];
+    session_regenerate_id(true);
+}
+
+--- includes/functions.php ---
+
+<?php
+function sanitize(string $input): string {
+    return htmlspecialchars(strip_tags(trim($input)), ENT_QUOTES, 'UTF-8');
+}
+
+function generateOTP(int $length = 6): string {
+    return str_pad((string)random_int(0, (10 ** $length) - 1), $length, '0', STR_PAD_LEFT);
+}
+
+function redirect(string $path): void {
+    header('Location: ' . BASE_URL . $path);
+    exit;
+}
+
+function formatDate(string $dateString, string $format = 'M j, Y'): string {
+    return date($format, strtotime($dateString));
+}
+
+function timeAgo(string $dateString): string {
+    $diff = time() - strtotime($dateString);
+    if ($diff < 60)         return 'Just now';
+    if ($diff < 3600)       return floor($diff / 60) . 'm ago';
+    if ($diff < 86400)      return floor($diff / 3600) . 'h ago';
+    if ($diff < 604800)     return floor($diff / 86400) . 'd ago';
+    return formatDate($dateString);
+}
+
+function createNotification(int $userId, string $message, string $type, string $link = ''): void {
+    $pdo = Database::getConnection();
+    $stmt = $pdo->prepare(
+        "INSERT INTO notifications (user_id, message, type, link) VALUES (?, ?, ?, ?)"
+    );
+    $stmt->execute([$userId, $message, $type, $link]);
+}
+
+function getUnreadNotificationCount(int $userId): int {
+    $pdo = Database::getConnection();
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0");
+    $stmt->execute([$userId]);
+    return (int) $stmt->fetchColumn();
+}
+
+function setFlash(string $type, string $message): void {
+    $_SESSION['flash'] = ['type' => $type, 'message' => $message];
+}
+
+function getFlash(): ?array {
+    if (isset($_SESSION['flash'])) {
+        $flash = $_SESSION['flash'];
+        unset($_SESSION['flash']);
+        return $flash;
+    }
+    return null;
+}
+
+function calculateCourseProgress(int $studentId, int $courseId): float {
+    $pdo = Database::getConnection();
+
+    // Total lessons in course
+    $stmt = $pdo->prepare("
+        SELECT COUNT(l.id)
+        FROM lessons l
+        JOIN modules m ON l.module_id = m.id
+        WHERE m.course_id = ?
+    ");
+    $stmt->execute([$courseId]);
+    $total = (int) $stmt->fetchColumn();
+    if ($total === 0) return 0.0;
+
+    // Completed lessons by student
+    $stmt = $pdo->prepare("
+        SELECT COUNT(lp.id)
+        FROM lesson_progress lp
+        JOIN lessons l ON lp.lesson_id = l.id
+        JOIN modules m ON l.module_id = m.id
+        WHERE m.course_id = ? AND lp.student_id = ? AND lp.completed = 1
+    ");
+    $stmt->execute([$courseId, $studentId]);
+    $completed = (int) $stmt->fetchColumn();
+
+    return round(($completed / $total) * 100, 2);
+}
+
+--------------------------------------------------------------------------------
+SECTION 5: CSS DESIGN SYSTEM (assets/css/main.css)
+--------------------------------------------------------------------------------
+
+Write ALL CSS from scratch. Do NOT use Bootstrap or any CSS framework.
+Use the following CSS variable system at the top of main.css:
+
+:root {
+  --color-primary:    #1D4ED8;
+  --color-primary-dark: #1e3a8a;
+  --color-primary-light: #dbeafe;
+  --color-secondary:  #0F172A;
+  --color-accent:     #F59E0B;
+  --color-success:    #16A34A;
+  --color-danger:     #DC2626;
+  --color-warning:    #D97706;
+  --color-text:       #1E293B;
+  --color-text-muted: #64748B;
+  --color-bg:         #F8FAFC;
+  --color-surface:    #FFFFFF;
+  --color-border:     #E2E8F0;
+
+  --font-sans: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.08);
+  --shadow-md: 0 4px 16px rgba(0,0,0,.10);
+  --shadow-lg: 0 10px 40px rgba(0,0,0,.14);
+  --transition: 0.2s ease;
+}
+
+The CSS must implement ALL of these components from scratch:
+  1. CSS Reset (box-sizing, margin/padding zero, img responsive)
+  2. Typography scale (h1–h6, p, small, strong, a)
+  3. Navbar (sticky, flex, logo left + nav links right + mobile hamburger)
+  4. Sidebar layout (fixed left sidebar 260px + main content right)
+  5. Cards (.card, .card-header, .card-body, .card-footer)
+  6. Buttons (.btn, .btn-primary, .btn-secondary, .btn-danger, .btn-outline, .btn-sm, .btn-lg)
+  7. Forms (.form-group, .form-label, .form-input, .form-select, .form-textarea, .form-error)
+  8. Badges (.badge, .badge-success, .badge-danger, .badge-warning, .badge-info)
+  9. Tables (.table, .table-striped, thead styling, responsive wrapper with overflow-x: auto)
+  10. Progress bar (.progress, .progress-bar with CSS width inline style)
+  11. Alert/flash message (.alert, .alert-success, .alert-error, .alert-warning)
+  12. Modal (.modal-overlay, .modal-box, .modal-header, .modal-body, .modal-footer)
+     -- toggle via CSS class .modal-open on body + vanilla JS
+  13. Avatar (.avatar, .avatar-sm, .avatar-md, .avatar-lg, circular with initials fallback)
+  14. Stat cards (.stat-card, icon area, number, label — used on dashboards)
+  15. OTP input (.otp-input-group with 6 inputs side by side)
+  16. Pagination (.pagination, .page-item, .page-item.active)
+  17. Tabs (.tabs, .tab-item, .tab-item.active, .tab-content)
+  18. Notification bell + dropdown (.notif-bell, .notif-dropdown)
+  19. Sidebar nav links (.sidebar-link, .sidebar-link.active with left border indicator)
+  20. Course card (.course-card with thumbnail top + info bottom, hover shadow)
+  21. Accordion (.accordion-item, .accordion-header, .accordion-body — for module list)
+  22. Quiz option buttons (.quiz-option — large clickable radio-style buttons)
+  23. Empty state (.empty-state: centered icon + heading + subtext + optional button)
+  24. Spinner (.spinner — CSS keyframe rotation animation)
+
+--- assets/css/responsive.css ---
+
+Write media queries for all layout-breaking points:
+  @media (max-width: 1024px) — tablet: sidebar collapses
+  @media (max-width: 768px)  — mobile: hamburger menu, single column
+  @media (max-width: 480px)  — small phone: adjust font sizes, spacing
+
+The mobile hamburger opens a slide-in sidebar overlay via JS class toggle.
+
+--------------------------------------------------------------------------------
+SECTION 6: ALL PHP PAGES — DETAILED SPECIFICATION
+--------------------------------------------------------------------------------
+
+Every page file must follow this structure:
+
+<?php
+require_once '../config/config.php';      // adjust path depth as needed
+require_once '../config/database.php';
+require_once '../includes/auth.php';
+require_once '../includes/functions.php';
+
+requireRole('student');  // or 'instructor', 'admin' — or nothing for public pages
+
+// --- QUERY DATA ---
+$pdo = Database::getConnection();
+$user = getCurrentUser();
+
+// fetch all needed data here with prepared statements
+
+// --- SET PAGE VARIABLES ---
+$pageTitle = "Dashboard";
+
+// --- RENDER ---
+include '../includes/header.php';
+?>
+<!-- HTML content here -->
+<?php include '../includes/footer.php'; ?>
+
+=== PUBLIC PAGES ===
+
+--- index.php (Homepage) ---
+  HERO SECTION:
+    Full-width banner, background: linear-gradient(135deg, #1D4ED8, #0F172A)
+    Centered text:
+      - Logo image or text: "WBDLS"
+      - H1: "Learn From Anywhere, Anytime"
+      - P: "Delta State Polytechnic's Official Distance Learning Portal"
+      - Two buttons: "Browse Courses" | "Get Started Free"
+    No login required to view
+
+  STATS BAR (below hero, white bg):
+    3 stat items pulled from DB:
+      - SELECT COUNT(*) FROM users WHERE role='student'   → "X+ Students"
+      - SELECT COUNT(*) FROM courses WHERE is_published=1 → "X+ Courses"
+      - SELECT COUNT(*) FROM users WHERE role='instructor'→ "X+ Instructors"
+
+  FEATURED COURSES SECTION:
+    Heading: "Popular Courses"
+    PHP: SELECT top 6 published courses ORDER BY enrollment count DESC
+    Render as a CSS grid of CourseCards (3-col desktop, 2-col tablet, 1-col mobile)
+    "View All Courses" button → /courses.php
+
+  HOW IT WORKS (3 steps):
+    1. Register — Create your free account
+    2. Enroll   — Pick a course and enroll
+    3. Learn    — Access content at your own pace
+    Each with an SVG icon (use inline SVG, no external icon library)
+
+  FOOTER:
+    - Logo + "Delta State Polytechnic Distance Learning System"
+    - Links: Home | Courses | Login | Register
+    - Address: Otefe-Oghara, Delta State, Nigeria
+    - © 2025 Delta State Polytechnic
+
+--- courses.php (Public Catalog) ---
+  At top: search form (GET method) + filter dropdowns (category, level)
+  PHP: build WHERE clause based on GET params, paginate 12 per page
+  Render course grid
+  Pagination links at bottom
+
+--- course_detail.php?id=X ---
+  Fetch course + instructor + modules + lessons + enrollment count
+  Display:
+    - Thumbnail (full width, 16:9 ratio)
+    - Title, description
+    - Instructor card (photo, name, bio)
+    - Badges: level, category, duration
+    - Stats: enrollment count, total lessons
+    - Accordion list of modules → lesson titles
+      (lesson content is locked — show lock icon if not enrolled)
+  Sidebar card:
+    - If not logged in: "Login to Enroll" button
+    - If logged in as student and NOT enrolled: "Enroll Now" button (POST to actions/student/enroll.php)
+    - If enrolled: "Continue Learning" button → /student/learn.php?course_id=X&lesson_id=Y
+                   (Y = first incomplete lesson, else first lesson)
+    - If instructor owns course: "Manage Course" button
+    - Progress bar if enrolled
+
+=== AUTH PAGES ===
+
+--- login.php ---
+  Centered card layout (max-width: 420px, margin: auto)
+  Logo at top
+  Flash message display (from $_SESSION['flash'])
+  Form (POST to actions/auth/login.php):
+    - Email input
+    - Password input (with show/hide toggle — vanilla JS)
+    - "Forgot Password?" link below password field
+    - Submit button: "Login"
+  Link below form: "Don't have an account? Register"
+
+--- register.php ---
+  Form (POST to actions/auth/register.php):
+    - First Name, Last Name (side by side on desktop, stacked mobile)
+    - Email
+    - Password + Confirm Password
+    - Role: radio buttons — Student | Instructor
+    - Submit button: "Create Account"
+  After success: redirect to verify_email.php?email=...
+
+--- verify_email.php?email=... ---
+  Heading: "Verify Your Email"
+  Subtext: "Enter the 6-digit code sent to [email]"
+  OTP input: 6 separate <input type="text" maxlength="1"> boxes
+    - JS: auto-focus next box on input, auto-focus prev on backspace
+    - Hidden combined input filled by JS before form submit
+  Form POST to actions/auth/verify_otp.php
+  "Resend Code" link (POST to actions/auth/resend_otp.php) with 60s countdown
+
+--- forgot_password.php ---
+  Form: email input → POST to actions/auth/forgot_password.php
+  On success: show message "OTP sent to your email"
+
+--- reset_password.php?email=... ---
+  Form: OTP input + New Password + Confirm Password
+  POST to actions/auth/reset_password.php
+
+=== STUDENT PAGES (all require requireRole('student')) ===
+
+--- student/dashboard.php ---
+  PAGE HEADER: "Welcome back, [FirstName]! 👋"
+
+  STATS ROW (4 stat cards):
+    1. Enrolled Courses   — COUNT enrollments WHERE student_id = current
+    2. Completed Lessons  — COUNT lesson_progress WHERE completed=1 AND student_id=current
+    3. Pending Assignments— COUNT where due_date > NOW and no submission yet
+    4. Avg Quiz Score     — AVG percentage from quiz_attempts WHERE student_id=current
+
+  MY COURSES (section, max 4, "View All" link):
+    For each enrollment: thumbnail + course title + instructor name + progress bar %
+    "Continue" button → /student/learn.php
+
+  UPCOMING ASSIGNMENTS (section):
+    HTML table: Assignment | Course | Due Date | Status
+    Pull assignments from enrolled courses where due_date > NOW, sorted by due_date ASC
+    Status badge: Pending / Submitted / Graded / Late
+
+  RECENT ANNOUNCEMENTS (section, 3 cards):
+    Announcements where target='all' OR target='students', ORDER BY created_at DESC LIMIT 3
+
+--- student/courses.php ---
+  Tab row: All | Active | Completed | Dropped
+  Filter by tab status in SQL WHERE clause
+  Card grid of enrolled courses with: thumbnail, title, progress bar, status badge, "Continue" button
+
+--- student/learn.php?course_id=X&lesson_id=Y ---
+  Layout: sidebar LEFT + content RIGHT (80/20 split on desktop)
+
+  LEFT SIDEBAR:
+    Course title as heading
+    Loop through modules → for each module an accordion section:
+      - Module title (clickable header)
+      - On expand: list of lessons as links
+      - Each lesson link: green check icon if completed, gray circle if not
+      - Current lesson highlighted with left border indicator
+    "← Back to My Courses" link at bottom
+
+  RIGHT MAIN AREA:
+    Lesson title as <h2>
+    If video_url is set:
+      Check if it is a YouTube URL:
+        - Extract video ID (parse URL)
+        - Render: <iframe width="100%" style="aspect-ratio:16/9"
+            src="https://www.youtube.com/embed/[VIDEO_ID]"
+            frameborder="0" allowfullscreen></iframe>
+      Else (direct mp4 or Cloudinary link):
+        - Render: <video controls style="width:100%"><source src="[url]"></video>
+    If content is set:
+      Render inside a <div class="lesson-content"> — use htmlspecialchars_decode()
+      or just echo the stored HTML directly (it was saved as sanitized HTML)
+    If file_path is set:
+      Render: "📎 Download Resource" button linking to uploads path
+
+    BOTTOM ACTIONS:
+      - If not yet complete: <form POST to actions/student/complete_lesson.php>
+        Hidden inputs: lesson_id, course_id, next_lesson_id
+        Button: "✓ Mark as Complete"
+      - If complete: show green "✓ Lesson Complete" indicator (no button)
+      Navigation: "← Previous" | "Next →" links
+
+--- student/assignments.php ---
+  Table: Assignment Title | Course | Module | Due Date | Max Score | My Score | Status | Action
+  If status is pending/late and due_date is still in future: show "Submit" button
+  Submit button opens a modal:
+    Form POST (multipart) to actions/student/submit_assignment.php
+    - assignment_id (hidden)
+    - Textarea for text submission
+    - File upload (max 10MB, allowed: pdf, doc, docx, zip)
+    - Submit button
+
+--- student/quiz.php?quiz_id=X ---
+  Verify: student is enrolled in the quiz's course
+  Check: how many attempts used vs max_attempts
+  If max attempts reached: show results only
+  If available: show quiz info card (title, time limit, pass mark, attempt count)
+  "Start Quiz" button → begins the attempt session
+
+  When quiz is active (quiz_active=1 in session):
+    FULL PAGE QUIZ MODE (no sidebar, minimal layout):
+    Header bar: Quiz title LEFT + Timer countdown RIGHT (JS setInterval if time_limit set)
+    Progress: "Question 3 of 10"
+    One question at a time layout:
+      - Question text in large readable font
+      - 4 option buttons (.quiz-option class) as radio-style large buttons
+        (clicking one adds .selected CSS class via JS)
+      - Previous / Next navigation
+    On last question: "Submit Quiz" button
+    Submit: hidden form with JSON-encoded answers → POST to actions/student/submit_quiz.php
+
+--- student/quiz_result.php?attempt_id=X ---
+  Score card: big circular display showing percentage (CSS only — no canvas)
+  Pass / Fail badge
+  Time taken
+  Question-by-question review:
+    Each question shows: question text, student's answer, correct answer
+    Color coded: green = correct, red = wrong
+
+--- student/forum.php?course_id=X ---
+  Verify student is enrolled in this course
+  Header: "[Course Title] — Discussion Forum"
+  "New Post" button → opens modal or top form (title + content textarea)
+    POST to: actions/student/... wait — forum posting can be done in a general actions/forum_post.php
+  List of forum posts: pinned posts first (with 📌 icon), then newest first
+    Each post card: title, author name+avatar, date, reply count
+    Click → forum_post.php?post_id=X
+
+--- student/profile.php ---
+  Two-section layout:
+    1. Profile Info form (update first_name, last_name, bio, phone)
+       File upload for profile_photo (image only, max 2MB)
+    2. Change Password form (current_password, new_password, confirm)
+  Both POST to actions in /actions/user/ (create these action files):
+    - actions/user/update_profile.php
+    - actions/user/update_photo.php
+    - actions/user/change_password.php
+
+--- student/notifications.php ---
+  Mark all as read when page loads (UPDATE notifications SET is_read=1 WHERE user_id=?)
+  List of all notifications, newest first
+  Each row: icon by type | message | time ago | link (if set)
+
+=== INSTRUCTOR PAGES ===
+
+--- instructor/dashboard.php ---
+  STATS (4 cards):
+    1. My Courses count
+    2. Total Students (across all my courses)
+    3. Pending Submissions to grade
+    4. Quizzes published
+
+  MY COURSES table:
+    Columns: Thumbnail | Title | Enrollments | Lessons | Published | Actions
+    Actions: View | Build | Edit | Delete (with JS confirm)
+
+  RECENT SUBMISSIONS (table, latest 10):
+    Student Name | Assignment | Course | Submitted | Status | Grade link
+
+--- instructor/create_course.php ---
+  Form (POST multipart to actions/instructor/create_course.php):
+    - Title (text)
+    - Category (select: Computer Science, Web Development, Database, Networking,
+                Software Engineering, Mathematics, General Studies)
+    - Level (select: Beginner, Intermediate, Advanced)
+    - Duration (text: e.g., "6 weeks")
+    - Description (textarea)
+    - Thumbnail (file: image, max 3MB)
+  On success: redirect to course_builder.php?course_id=[new_id]
+
+--- instructor/course_builder.php?course_id=X ---
+  TWO-COLUMN LAYOUT:
+    LEFT (30%): Module + Lesson tree
+      - List of modules (each with Edit ✎ + Delete 🗑 icons)
+      - Expand each module to show its lessons (each with Edit + Delete)
+      - "＋ Add Module" button at bottom → shows inline form below list
+      - Under each module: "＋ Add Lesson" button
+
+    RIGHT (70%): Editor panel
+      Default state: "Select a module or lesson to edit, or click Add."
+
+      When ADDING/EDITING MODULE:
+        - Form: Title input, Description textarea, Sort Order number
+        - Save / Cancel buttons
+        - POST to actions/instructor/create_module.php OR update_module.php
+
+      When ADDING/EDITING LESSON:
+        - Form fields:
+          · Title (text)
+          · Content (plain <textarea> — store HTML; instructor can type basic HTML
+            OR: embed a minimal WYSIWYG using the Quill CDN JS from a trusted CDN
+            → Use: <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+            → Use: <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+            → Initialize Quill on the textarea. On form submit, copy Quill HTML to hidden input.)
+          · Video URL (text, placeholder: "Paste YouTube or mp4 URL")
+          · Upload Resource File (file, max 20MB: pdf/doc/docx/ppt/pptx)
+          · Duration (number, minutes)
+          · Sort Order (number)
+        - Save / Cancel buttons
+        - POST to actions/instructor/create_lesson.php OR update_lesson.php
+
+  All form submissions use regular HTML form POST (no AJAX required, though AJAX
+  is welcome for a smoother UX if you want to implement it in vanilla JS).
+
+--- instructor/assignments.php ---
+  Dropdown: Select Course → Select Module
+  Table of assignments for that module
+  "Create Assignment" button → modal/inline form:
+    - Title, Description (textarea), Due Date (datetime-local input), Max Score
+    - Optional: file attachment (instructor resource)
+  Existing assignment rows: Edit | Delete | "View Submissions" link
+
+--- instructor/grade_submissions.php?assignment_id=X ---
+  Assignment details at top (title, due date, max score, submission stats)
+  Table of all submissions:
+    Student Name | Submitted At | Type (File/Text) | Score | Status | Action
+  "Grade" button → inline expand row OR side panel:
+    - Show submission (file download link OR text preview in <blockquote>)
+    - Score input (0 to max_score)
+    - Feedback textarea
+    - "Save Grade" button → POST to actions/instructor/grade_submission.php
+
+--- instructor/quiz_builder.php?course_id=X ---
+  TOP SECTION: Quiz Settings form
+    - Title, Description, Time Limit (minutes, blank=none), Max Attempts, Pass Mark %
+    - "Save Quiz Settings" button
+    - "Published" toggle (checkbox) → POST to actions/instructor/publish_quiz.php
+
+  BELOW: Question management
+    List of existing questions (drag handles optional)
+    Each question card: question text preview, options, correct answer indicator
+    Edit / Delete per question
+    "＋ Add Question" button → inline form:
+      - Question Text (textarea)
+      - Option A, B, C, D (text inputs)
+      - Correct Answer (radio: A | B | C | D)
+      - Points (number, default 1)
+      - Sort Order (number)
+    "Save Question" → POST to actions/instructor/save_questions.php
+
+--- instructor/students.php ---
+  Dropdown: filter by course (or All Courses)
+  Table: Student Name | Email | Course | Enrolled Date | Progress % | Last Active
+
+--- instructor/announcements.php ---
+  Form to create announcement:
+    - Title, Content (textarea), Target (All / Students / Instructors)
+    - Course (select — choose one of instructor's courses OR "Platform-wide")
+    - POST to actions/instructor/post_announcement.php
+  Below: table of existing announcements by this instructor
+
+=== ADMIN PAGES ===
+
+--- admin/dashboard.php ---
+  STATS (4 cards):
+    - Total Users
+    - Total Courses
+    - Total Enrollments
+    - Active Sessions (users logged in last 30 min — optional, skip if complex)
+
+  CHART SECTION:
+    Since we're in pure PHP+HTML+CSS+JS (no React), use Chart.js from CDN:
+      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    PHP: query last 7 days of registrations (GROUP BY DATE(created_at))
+    Pass data as PHP JSON to JS:
+      <script>
+        const labels = <?php echo json_encode($labels); ?>;
+        const data   = <?php echo json_encode($data); ?>;
+        // render line chart
+      </script>
+    Render a <canvas id="registrationChart"> element.
+
+  LATEST USERS TABLE (5 rows): Name | Email | Role | Status | Joined
+  LATEST COURSES TABLE (5 rows): Title | Instructor | Category | Published | Enrolled
+
+--- admin/users.php ---
+  Search form (GET: search by name/email) + filter by role dropdown
+  Paginated table (20 per page):
+    Avatar | Full Name | Email | Role badge | Status badge | Joined | Actions
+  Actions:
+    - Toggle Active/Inactive (POST to actions/admin/toggle_user.php)
+    - Delete (POST to actions/admin/delete_user.php) with JS confirm dialog
+
+--- admin/courses.php ---
+  Table: Thumbnail | Title | Instructor | Category | Enrollments | Published | Created | Actions
+  Actions: Toggle Publish | Delete (with confirm)
+
+--- admin/announcements.php ---
+  Same as instructor/announcements.php but for platform-wide announcements
+  Target choices: All / Students / Instructors
+
+--------------------------------------------------------------------------------
+SECTION 7: ACTION FILES — BEHAVIOR SPEC
+--------------------------------------------------------------------------------
+
+Every action file in /actions/ follows this pattern:
+  1. require_once config + includes
+  2. requireLogin() or requireRole(...)
+  3. Validate CSRF token (see Section 9 — Security)
+  4. Validate + sanitize input
+  5. PDO prepared statement
+  6. setFlash() on success or error
+  7. redirect() to appropriate page
+
+--- actions/auth/register.php ---
+  - Validate: all fields present, email format, passwords match, role in [student, instructor]
+  - Check email uniqueness
+  - Hash password: password_hash($password, PASSWORD_BCRYPT, ['cost' => 12])
+  - INSERT INTO users
+  - Generate OTP (generateOTP()), set otp_code and otp_expires_at (NOW + 10 minutes)
+  - Send OTP email via PHPMailer (see email template in Section 8)
+  - Redirect to /verify_email.php?email=...
+
+--- actions/auth/login.php ---
+  - Fetch user by email
+  - Check: exists, is_verified=1, is_active=1
+  - password_verify()
+  - setUserSession($user)
+  - redirect based on role:
+      admin → /admin/dashboard.php
+      instructor → /instructor/dashboard.php
+      student → /student/dashboard.php
+
+--- actions/auth/logout.php ---
+  session_destroy()
+  redirect to /login.php
+
+--- actions/student/enroll.php ---
+  - Verify student not already enrolled
+  - Verify course is published
+  - INSERT INTO enrollments
+  - Create notification for course instructor
+  - setFlash success
+  - redirect to /student/learn.php?course_id=X&lesson_id=[first_lesson_id]
+
+--- actions/student/complete_lesson.php ---
+  - INSERT INTO lesson_progress (or UPDATE if exists) SET completed=1, completed_at=NOW()
+  - Recalculate course progress: calculateCourseProgress() helper
+  - UPDATE enrollments SET progress=? WHERE student_id=? AND course_id=?
+  - Check if all lessons done → update enrollment status to 'completed'
+  - redirect to next lesson or course page
+
+--- actions/student/submit_quiz.php ---
+  - Receive answers as JSON from hidden input
+  - Fetch all questions for this quiz
+  - Calculate score: loop through answers, compare with correct_answer
+  - Calculate percentage, determine passed (percentage >= pass_mark)
+  - INSERT INTO quiz_attempts
+  - Create notification for student (grade received)
+  - redirect to /student/quiz_result.php?attempt_id=X
+
+--- actions/instructor/create_course.php ---
+  - Validate fields
+  - Handle thumbnail upload: move to uploads/thumbnails/, validate type (jpg/png/webp), max 3MB
+  - INSERT INTO courses with instructor_id = current user ID
+  - redirect to /instructor/course_builder.php?course_id=[new_id]
+
+--- actions/instructor/grade_submission.php ---
+  - Validate score is between 0 and max_score
+  - UPDATE submissions SET score=?, feedback=?, status='graded', graded_at=NOW()
+  - Create notification for the student: "Your [assignment title] has been graded: X/Y"
+  - redirect back with flash
+
+--------------------------------------------------------------------------------
+SECTION 8: EMAIL TEMPLATES (config/mail.php + HTML emails)
+--------------------------------------------------------------------------------
+
+--- config/mail.php ---
+
+<?php
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+function sendEmail(string $toEmail, string $toName, string $subject, string $htmlBody): bool {
+    $mail = new PHPMailer(true);
+    try {
+        $mail->isSMTP();
+        $mail->Host       = 'smtp.gmail.com';
+        $mail->SMTPAuth   = true;
+        $mail->Username   = $_ENV['MAIL_USER'];
+        $mail->Password   = $_ENV['MAIL_APP_PASSWORD'];
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port       = 587;
+
+        $mail->setFrom($_ENV['MAIL_USER'], 'WBDLS — Delta State Polytechnic');
+        $mail->addAddress($toEmail, $toName);
+        $mail->isHTML(true);
+        $mail->Subject = $subject;
+        $mail->Body    = $htmlBody;
+
+        $mail->send();
+        return true;
+    } catch (Exception $e) {
+        error_log('Mail error: ' . $mail->ErrorInfo);
+        return false;
+    }
+}
+
+function getOtpEmailHtml(string $firstName, string $otp): string {
+    return '
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Segoe UI, sans-serif; background: #f8fafc; margin:0; padding:20px; }
+        .container { max-width: 500px; margin: auto; background: #fff;
+                     border-radius: 10px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,.1); }
+        .header { background: #1D4ED8; padding: 24px 32px; color: #fff; }
+        .header h1 { margin:0; font-size:20px; }
+        .header p { margin:4px 0 0; font-size:13px; opacity:.85; }
+        .body { padding: 32px; }
+        .otp-box { background: #dbeafe; border: 2px dashed #1D4ED8;
+                   border-radius: 8px; text-align: center; padding: 20px; margin: 24px 0; }
+        .otp-box span { font-size: 36px; font-weight: 700; letter-spacing: 10px; color: #1D4ED8; }
+        .footer { background: #f1f5f9; padding: 16px 32px; font-size: 12px; color: #64748b;
+                  text-align: center; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>Delta State Polytechnic</h1>
+          <p>Web-Based Distance Learning System</p>
+        </div>
+        <div class="body">
+          <p>Hello <strong>' . htmlspecialchars($firstName) . '</strong>,</p>
+          <p>Use the code below to verify your email address. This code expires in <strong>10 minutes</strong>.</p>
+          <div class="otp-box"><span>' . $otp . '</span></div>
+          <p>If you did not create an account, please ignore this email.</p>
+        </div>
+        <div class="footer">
+          &copy; ' . date('Y') . ' Delta State Polytechnic, Otefe-Oghara, Delta State, Nigeria
+        </div>
+      </div>
+    </body>
+    </html>';
+}
+
+--------------------------------------------------------------------------------
+SECTION 9: SECURITY — IMPLEMENT ALL OF THESE
+--------------------------------------------------------------------------------
+
+1. CSRF PROTECTION on every POST form:
+   - In session, generate token: $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+   - Add hidden input to every form: <input type="hidden" name="csrf_token" value="...">
+   - In every action file, validate BEFORE processing:
+     if (!hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'] ?? '')) {
+         http_response_code(403); die('CSRF validation failed.');
+     }
+   - Add getCsrfToken() and csrfField() helpers to includes/functions.php
+
+2. PREPARED STATEMENTS — absolutely no string concatenation in SQL queries.
+   Every query uses PDO prepare() + execute(). Never: "WHERE id = $id"
+
+3. PASSWORD HASHING — password_hash($pw, PASSWORD_BCRYPT, ['cost' => 12])
+   NEVER: md5, sha1, sha256 for passwords.
+
+4. FILE UPLOAD SECURITY:
+   - Whitelist allowed MIME types and extensions (never trust $_FILES['type'])
+   - Use finfo_file() to detect real MIME type
+   - Rename uploaded files to a UUID/random name + allowed extension
+   - Store uploads OUTSIDE web root if possible OR add /uploads/.htaccess:
+     <FilesMatch "\.php$">
+       Require all denied
+     </FilesMatch>
+
+5. SESSION SECURITY:
+   - session_regenerate_id(true) after login
+   - ini_set('session.cookie_httponly', 1)
+   - ini_set('session.cookie_samesite', 'Lax')
+   - Session timeout: if idle > 30 minutes, destroy session and redirect to login
+
+6. INPUT VALIDATION + SANITIZATION:
+   - Server-side validation on EVERY field (length, format, type)
+   - sanitize() function strips tags and encodes special chars
+   - Email: filter_var($email, FILTER_VALIDATE_EMAIL)
+   - Never echo raw $_POST or $_GET data without htmlspecialchars()
+
+7. SQL INJECTION — impossible with prepared statements. Double-check every query.
+
+8. XSS PREVENTION:
+   - All user-generated text output: echo htmlspecialchars($value, ENT_QUOTES, 'UTF-8')
+   - Exception: lesson content (stored as HTML from Quill editor) is rendered with echo
+     but should be stored sanitized server-side. Use HTMLPurifier or strip dangerous tags
+     before saving lesson content.
+
+9. DIRECTORY LISTING: add Options -Indexes to root .htaccess
+
+10. HTTPS: on production, all traffic must use HTTPS (handled by hosting provider).
+    Force redirect in .htaccess:
+    RewriteCond %{HTTPS} off
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+--- Root .htaccess ---
+
+Options -Indexes
+RewriteEngine On
+
+# Force HTTPS (uncomment on production)
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Security headers
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set X-XSS-Protection "1; mode=block"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Deny direct access to sensitive files
+<FilesMatch "\.(env|sql|json|lock|md|gitignore)$">
+  Require all denied
+</FilesMatch>
+
+# Deny access to config and includes
+RedirectMatch 403 ^/config/
+RedirectMatch 403 ^/includes/
+
+--------------------------------------------------------------------------------
+SECTION 10: SEED DATA (create a file: config/seed.php — run once)
+--------------------------------------------------------------------------------
+
+<?php
+require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/database.php';
+
+$pdo = Database::getConnection();
+
+// Users
+$users = [
+    ['Admin', 'User', 'admin@dspoly.edu.ng', password_hash('Admin@123', PASSWORD_BCRYPT),
+     'admin', 1, 1],
+    ['Dr. Felix', 'Elugwa', 'instructor@dspoly.edu.ng', password_hash('Instructor@123', PASSWORD_BCRYPT),
+     'instructor', 1, 1],
+    ['Demo', 'Student', 'student@dspoly.edu.ng', password_hash('Student@123', PASSWORD_BCRYPT),
+     'student', 1, 1],
+];
+
+foreach ($users as $u) {
+    $stmt = $pdo->prepare("
+        INSERT IGNORE INTO users (first_name, last_name, email, password, role, is_active, is_verified)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    ");
+    $stmt->execute($u);
+}
+
+// Get instructor ID
+$stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
+$stmt->execute(['instructor@dspoly.edu.ng']);
+$instructorId = $stmt->fetchColumn();
+
+$stmt->execute(['student@dspoly.edu.ng']);
+$studentId = $stmt->fetchColumn();
+
+// Courses
+$courses = [
+    [$instructorId, 'Introduction to Computer Science',
+     'A foundational course covering the basics of computing, algorithms, and problem solving.',
+     'Computer Science', 'Beginner', '8 weeks'],
+    [$instructorId, 'Web Development with HTML & CSS',
+     'Learn to build modern, responsive websites from scratch using HTML5 and CSS3.',
+     'Web Development', 'Beginner', '6 weeks'],
+    [$instructorId, 'Database Management Systems',
+     'Understand relational databases, SQL, normalization, and real-world database design.',
+     'Database', 'Intermediate', '10 weeks'],
+];
+
+foreach ($courses as $c) {
+    $stmt = $pdo->prepare("
+        INSERT INTO courses (instructor_id, title, description, category, level, duration, is_published)
+        VALUES (?, ?, ?, ?, ?, ?, 1)
+    ");
+    $stmt->execute($c);
+}
+
+// Fetch course IDs
+$stmt = $pdo->query("SELECT id FROM courses ORDER BY id LIMIT 3");
+$courseIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+// For each course: 2 modules with 3 lessons each
+foreach ($courseIds as $cIdx => $courseId) {
+    for ($m = 1; $m <= 2; $m++) {
+        $stmt = $pdo->prepare("INSERT INTO modules (course_id, title, sort_order) VALUES (?, ?, ?)");
+        $stmt->execute([$courseId, "Module $m: Topic Area $m", $m]);
+        $moduleId = $pdo->lastInsertId();
+
+        for ($l = 1; $l <= 3; $l++) {
+            $stmt = $pdo->prepare("
+                INSERT INTO lessons (module_id, title, content, sort_order)
+                VALUES (?, ?, ?, ?)
+            ");
+            $stmt->execute([
+                $moduleId,
+                "Lesson $l of Module $m",
+                "<h3>Lesson $l</h3><p>This is the content for lesson $l in module $m.
+                 Students should read this section carefully and take notes.</p>
+                 <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod
+                 tempor incididunt ut labore et dolore magna aliqua.</p>",
+                $l
+            ]);
+        }
+    }
+}
+
+// Enroll demo student in first 2 courses
+foreach (array_slice($courseIds, 0, 2) as $courseId) {
+    $stmt = $pdo->prepare("
+        INSERT IGNORE INTO enrollments (student_id, course_id) VALUES (?, ?)
+    ");
+    $stmt->execute([$studentId, $courseId]);
+}
+
+// Create 1 quiz for course 1
+$stmt = $pdo->prepare("
+    INSERT INTO quizzes (course_id, title, description, time_limit, max_attempts, pass_mark, is_published)
+    VALUES (?, 'Introduction Quiz', 'Test your knowledge of Module 1.', 15, 2, 50, 1)
+");
+$stmt->execute([$courseIds[0]]);
+$quizId = $pdo->lastInsertId();
+
+// 5 questions
+$questions = [
+    ['What does CPU stand for?', 'Central Processing Unit', 'Computer Power Unit',
+     'Central Power Unit', 'Control Processing Unit', 'A'],
+    ['Which language is used for web structure?', 'CSS', 'HTML', 'PHP', 'SQL', 'B'],
+    ['What is an algorithm?', 'A type of computer', 'A set of instructions to solve a problem',
+     'A programming language', 'A database', 'B'],
+    ['What does RAM stand for?', 'Read Access Memory', 'Random Access Memory',
+     'Remote Access Module', 'Read Allocated Memory', 'B'],
+    ['Which of these is a database?', 'HTML', 'CSS', 'MySQL', 'PHP', 'C'],
+];
+foreach ($questions as $i => $q) {
+    $stmt = $pdo->prepare("
+        INSERT INTO quiz_questions
+        (quiz_id, question_text, option_a, option_b, option_c, option_d, correct_answer, sort_order)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ");
+    $stmt->execute(array_merge([$quizId], $q, [$i + 1]));
+}
+
+// Announcements
+foreach ($courseIds as $courseId) {
+    $stmt = $pdo->prepare("
+        INSERT INTO announcements (author_id, course_id, title, content, target)
+        VALUES (?, ?, 'Welcome to the Course!',
+         'Welcome to this course. Please review the course materials and reach out if you need help.',
+         'students')
+    ");
+    $stmt->execute([$instructorId, $courseId]);
+}
+
+echo "Seed complete.\n";
+
+--------------------------------------------------------------------------------
+SECTION 11: ENVIRONMENT VARIABLES
+--------------------------------------------------------------------------------
+
+--- .env.example ---
+
+DB_HOST=localhost
+DB_NAME=wbdls
+DB_USER=your_db_username
+DB_PASS=your_db_password
+BASE_URL=https://yourdomain.com
+MAIL_USER=your.gmail@gmail.com
+MAIL_APP_PASSWORD=your_16char_app_password
+
+--- .gitignore ---
+
+.env
+vendor/
+uploads/*
+!uploads/.gitkeep
+!uploads/profiles/.gitkeep
+!uploads/assignments/.gitkeep
+!uploads/resources/.gitkeep
+!uploads/thumbnails/.gitkeep
+
+--------------------------------------------------------------------------------
+SECTION 12: includes/header.php TEMPLATE
+--------------------------------------------------------------------------------
+
+Write one universal header.php that:
+
+1. Outputs full HTML <head>:
+   - <!DOCTYPE html>, <html lang="en">
+   - <meta charset="UTF-8">, <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   - <title><?php echo $pageTitle ?? APP_NAME; ?></title>
+   - <link rel="stylesheet" href="[BASE_URL]/assets/css/main.css">
+   - <link rel="stylesheet" href="[BASE_URL]/assets/css/responsive.css">
+   - Additional page-specific CSS via $extraCss array if defined
+
+2. Detects current user role (if logged in) and renders the correct navbar:
+   - Public navbar (not logged in): Logo + "Courses" + "Login" + "Register"
+   - Student navbar: Logo + links + notification bell + user avatar dropdown
+   - Instructor navbar: similar with instructor-specific links
+   - Admin navbar: similar with admin links
+
+3. Flash message display (call getFlash() and render .alert div if set)
+
+4. CSRF token in meta tag (so JS can access it if needed):
+   <meta name="csrf-token" content="<?php echo getCsrfToken(); ?>">
+
+--- includes/footer.php ---
+
+Outputs:
+  </main>
+  <footer> ... site footer ... </footer>
+  <script src="[BASE_URL]/assets/js/main.js"></script>
+  [any page-specific scripts via $extraJs array]
+  </body>
+  </html>
+
+--------------------------------------------------------------------------------
+SECTION 13: VANILLA JS (assets/js/main.js)
+--------------------------------------------------------------------------------
+
+Write all JavaScript in vanilla JS (NO jQuery, NO React, NO Vue).
+Implement these behaviors:
+
+1. MOBILE HAMBURGER MENU:
+   - Toggle .sidebar-open class on body
+   - Show/hide sidebar overlay
+
+2. NOTIFICATION DROPDOWN:
+   - Click bell icon → toggle .notif-dropdown.open
+   - Click outside → close dropdown
+   - AJAX fetch (fetch API) to /actions/notifications/mark_read.php on open
+
+3. OTP INPUT AUTO-FOCUS:
+   - On verify_email.php: 6 boxes, typing in one auto-focuses the next
+   - Backspace on empty box focuses previous
+   - On last box filled: auto-submit form or enable submit button
+   - Before submit: concatenate all 6 values into hidden input #otpFull
+
+4. PASSWORD SHOW/HIDE:
+   - Toggle input[type=password] to text on eye icon click
+
+5. CONFIRM DELETE:
+   - All delete buttons/forms: confirm("Are you sure?") before submit
+
+6. QUIZ TIMER (assets/js/quiz.js):
+   - If timeLimit is set (PHP passes it as a JS variable via inline <script>):
+     let secondsLeft = timeLimit * 60;
+     const timer = setInterval(() => {
+       secondsLeft--;
+       if (secondsLeft <= 0) { clearInterval(timer); document.getElementById('quizForm').submit(); }
+       display MM:SS in header timer element
+       if (secondsLeft <= 60) add .danger class to timer element
+     }, 1000);
+
+7. QUIZ OPTION SELECTION:
+   - Click .quiz-option → remove .selected from siblings → add .selected to clicked
+   - Update hidden input value with selected answer
+
+8. QUIZ QUESTION NAVIGATION:
+   - "Next" and "Previous" buttons show/hide .question-slide divs
+   - Update "Question X of Y" counter
+   - On reaching last question, show "Submit Quiz" button
+
+9. MODAL:
+   - openModal(id) / closeModal(id) — toggle .modal-overlay.active class
+   - Click overlay background → close
+   - Close button (×) → close
+
+10. ACCORDION (module list in course builder and learn page):
+    - Click accordion header → toggle .accordion-body.open + rotate chevron icon
+
+11. SIDEBAR ACTIVE LINK:
+    - On page load, compare current URL with sidebar link href
+    - Add .active class to matching link
+
+--------------------------------------------------------------------------------
+SECTION 14: DEPLOYMENT INSTRUCTIONS (write into README.md)
+--------------------------------------------------------------------------------
+
+=== OPTION A: InfinityFree (Free Hosting) ===
+1. Go to https://www.infinityfree.com → Register → Create Hosting Account
+2. Note your MySQL hostname, database name, username, password from cPanel
+3. Upload project files via File Manager or FTP (FileZilla):
+   - Upload everything EXCEPT .env, vendor/, .git/
+4. Go to cPanel → MySQL Databases → import config/schema.sql via phpMyAdmin
+5. Create .env on server via File Manager with your DB credentials
+6. SSH or run config/seed.php via the browser once:
+   - Temporarily move seed.php to root, visit in browser, then DELETE IT
+7. Run Composer on server: if SSH not available, upload vendor/ folder locally first
+   (run: composer install --no-dev), then upload the vendor/ folder via FTP
+
+=== OPTION B: Hostinger Shared Hosting (Recommended, ~$3/month) ===
+1. Purchase basic plan → cPanel auto-configured
+2. Create MySQL DB in cPanel
+3. Upload files via hPanel File Manager or FTP
+4. Import schema.sql via phpMyAdmin
+5. Set up .env via File Manager
+6. SSH access available: run `composer install` and `php config/seed.php`
+
+=== OPTION C: Render (Free, using Docker / PHP buildpack) ===
+1. Add a Dockerfile in root:
+   FROM php:8.1-apache
+   RUN docker-php-ext-install pdo pdo_mysql
+   RUN apt-get update && apt-get install -y unzip
+   RUN curl -sS https://getcomposer.org/installer | php \
+       && mv composer.phar /usr/local/bin/composer
+   COPY . /var/www/html/
+   RUN cd /var/www/html && composer install --no-dev
+   RUN chown -R www-data:www-data /var/www/html/uploads
+2. Create a free Render Web Service → connect GitHub → choose Docker
+3. Add environment variables in Render dashboard
+4. For MySQL: use PlanetScale (free MySQL-compatible) or Clever Cloud MySQL (free tier)
+   Connect using external DB_HOST
+
+=== AFTER DEPLOYMENT ===
+  Visit your site URL
+  Login with seed credentials:
+    Admin:      admin@dspoly.edu.ng / Admin@123
+    Instructor: instructor@dspoly.edu.ng / Instructor@123
+    Student:    student@dspoly.edu.ng / Student@123
+  DELETE config/seed.php from the server after first run.
+
+--------------------------------------------------------------------------------
+SECTION 15: README.md
+--------------------------------------------------------------------------------
+
+Write README.md with these sections:
+
+  # Web-Based Distance Learning System (WBDLS)
+  ### Case Study: Delta State Polytechnic, Otefe-Oghara
+
+  ## Overview
+  ## Tech Stack (HTML, CSS, PHP, MySQL)
+  ## Features
+  ## Folder Structure
+  ## Requirements (PHP 8.1+, MySQL 8.0+, Composer)
+  ## Local Setup
+    - Clone repo
+    - Run `composer install`
+    - Create MySQL database and import config/schema.sql
+    - Copy .env.example to .env and fill values
+    - Run `php config/seed.php` for demo data
+    - Serve with: `php -S localhost:8000`
+    - Visit: http://localhost:8000
+  ## Gmail App Password Setup
+  ## Deployment (link to Section 14)
+  ## Default Credentials
+  ## License
+
+--------------------------------------------------------------------------------
+SECTION 16: FINAL CHECKLIST FOR OPENCODE
+--------------------------------------------------------------------------------
+
+Before marking the project as complete, verify:
+
+  [ ] All 3 roles work end-to-end (register → verify → login → use features → logout)
+  [ ] Student can: enroll, view lessons, mark complete, submit assignments, take quizzes
+  [ ] Instructor can: create courses, add modules/lessons, grade, create quizzes
+  [ ] Admin can: manage users (toggle/delete), manage courses, post announcements
+  [ ] OTP email sends via PHPMailer (test with real Gmail App Password)
+  [ ] Progress bar updates correctly as lessons are completed
+  [ ] Quiz auto-grades and shows results with pass/fail
+  [ ] All forms have CSRF token validation
+  [ ] All SQL uses PDO prepared statements (grep for raw query strings — there must be none)
+  [ ] File uploads validated by real MIME type (finfo_file), renamed to UUID
+  [ ] /uploads/.htaccess denies PHP execution
+  [ ] Mobile responsive: test at 375px width (iPhone SE)
+  [ ] All empty states have proper UI (not blank pages)
+  [ ] config/seed.php runs without errors
+  [ ] config/schema.sql imports cleanly
+  [ ] README.md is complete with all setup steps
+  [ ] .env.example has all keys, .env is in .gitignore
+  [ ] No hardcoded credentials anywhere in PHP files
+
+================================================================================
+END OF PROMPT
+================================================================================
+
+SUMMARY — What OpenCode must deliver:
+  ✓ Pure HTML + CSS + PHP + MySQL codebase (as stated in the project abstract)
+  ✓ Complete MySQL schema (config/schema.sql)
+  ✓ Full PHP backend: actions, sessions, PDO, PHPMailer, file uploads
+  ✓ All pages for 3 roles: Admin, Instructor, Student (see Section 6)
+  ✓ Hand-written CSS design system from scratch (no Bootstrap/Tailwind)
+  ✓ Vanilla JavaScript for interactivity (no frameworks)
+  ✓ Security: CSRF, prepared statements, bcrypt, MIME validation, XSS prevention
+  ✓ Seed data with demo users, courses, quiz, enrollments
+  ✓ Deployment-ready for InfinityFree / Hostinger / Render
+  ✓ README with local setup + deployment guide
+
+================================================================================

@@ -1,0 +1,23 @@
+Options -Indexes
+RewriteEngine On
+
+# Force HTTPS (uncomment on production)
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Security headers
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set X-XSS-Protection "1; mode=block"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Deny direct access to sensitive files
+<FilesMatch "\.(env|sql|json|lock|md|gitignore)$">
+  Require all denied
+</FilesMatch>
+
+# Deny access to config and includes
+RedirectMatch 403 ^/config/
+RedirectMatch 403 ^/includes/
