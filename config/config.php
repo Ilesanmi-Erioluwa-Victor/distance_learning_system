@@ -16,9 +16,9 @@ if (file_exists($autoloadPath)) {
 }
 
 // -----------------------------
-// Load .env safely (ONLY if Dotenv exists)
+// Load .env safely (skip on Render)
 // -----------------------------
-if (class_exists('Dotenv\\Dotenv')) {
+if (class_exists('Dotenv\\Dotenv') && empty($_ENV['RENDER'])) {
     $dotenvPath = __DIR__ . '/../';
 
     try {
