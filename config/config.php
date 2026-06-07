@@ -32,8 +32,14 @@ if (class_exists('Dotenv\\Dotenv') && empty($_ENV['RENDER'])) {
 // -----------------------------
 // ENV FALLBACKS (Render + InfinityFree-safe)
 // -----------------------------
+// Helper to strip protocol and trailing slash from host
+$stripProtocol = function ($host) {
+    return rtrim(preg_replace('/^https?:\/\//', '', $host), '/');
+};
+
 if (!defined('DB_HOST')) {
-    define('DB_HOST', $_ENV['MYSQL_HOST'] ?? $_ENV['DB_HOST'] ?? 'localhost');
+    $rawHost = $_ENV['MYSQL_HOST'] ?? $_ENV['DB_HOST'] ?? 'localhost';
+    define('DB_HOST', $stripProtocol($rawHost));
 }
 
 if (!defined('DB_NAME')) {
