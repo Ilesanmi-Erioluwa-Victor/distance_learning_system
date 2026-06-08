@@ -59,6 +59,14 @@ $stmt = $pdo->prepare("
 ");
 $stmt->execute([$first, $last, $email, $hash, $role, $otp, $otpExpires, $facultyId, $departmentId, $studentLevel]);
 
-// Show OTP directly (email sending disabled on Render free tier)
+// Send email if configured, otherwise show OTP directly
+if (defined('MAIL_USER') && MAIL_USER !== '') {
+    $body = getOtpEmailHtml($first, $otp);
+    $sent = sendEmail($email, $first, 'Verify your WBDLS account', $body);
+    if ($sent) {
+        setFlash('success', 'Account created! Check your email for the verification code.');
+        redirect('/verify_email.php?email=' . urlencode($email));
+    }
+}
 setFlash('info', 'Your verification code is: ' . $otp);
 redirect('/verify_email.php?email=' . urlencode($email));
