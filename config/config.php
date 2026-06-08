@@ -83,6 +83,11 @@ define('APP_NAME', 'DSPoly e-Learning Portal');
 define('SESSION_NAME', 'wbdls_session');
 
 // -----------------------------
+// TIMEZONE
+// -----------------------------
+date_default_timezone_set('UTC');
+
+// -----------------------------
 // SESSION SECURITY
 // -----------------------------
 ini_set('session.cookie_httponly', 1);

@@ -15,6 +15,15 @@ if (!$email || !$otp) {
 }
 
 $pdo = Database::getConnection();
+
+// Debug: fetch user and log OTP info
+$checkStmt = $pdo->prepare("SELECT id, otp_code, otp_expires_at, NOW() as db_now FROM users WHERE email = ?");
+$checkStmt->execute([$email]);
+$check = $checkStmt->fetch();
+if ($check) {
+    error_log("OTP verify: email=$email otp_submitted=$otp otp_db={$check['otp_code']} expires={$check['otp_expires_at']} db_now={$check['db_now']}");
+}
+
 $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ? AND otp_code = ? AND otp_expires_at > NOW()");
 $stmt->execute([$email, $otp]);
 $user = $stmt->fetch();

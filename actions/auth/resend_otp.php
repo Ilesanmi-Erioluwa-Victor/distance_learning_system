@@ -20,8 +20,10 @@ if ($user && !$user['is_verified']) {
     $otpExpires = (new DateTime('+10 minutes'))->format('Y-m-d H:i:s');
     $stmt = $pdo->prepare("UPDATE users SET otp_code = ?, otp_expires_at = ? WHERE id = ?");
     $stmt->execute([$otp, $otpExpires, $user['id']]);
+    error_log("Resend OTP: email=$email new_otp=$otp");
     $body = getOtpEmailHtml($user['first_name'], $otp);
     $err = sendEmail($email, $user['first_name'], 'Verify your DSPoly e-Learning account', $body);
+    error_log("Resend OTP result: " . ($err === '' ? 'SUCCESS' : "FAILED: $err"));
     if ($err === '') {
         setFlash('success', 'A new code has been sent to your email.');
     } else {
