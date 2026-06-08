@@ -28,7 +28,7 @@ if (!empty($_FILES['thumbnail']['name'])) {
 $pdo = Database::getConnection();
 $stmt = $pdo->prepare("
     INSERT INTO courses (instructor_id, title, description, thumbnail, level, category, duration, is_published)
-    VALUES (?, ?, ?, ?, ?, ?, ?, 0)
+    VALUES (?, ?, ?, ?, ?, ?, ?, FALSE)
 ");
 $stmt->execute([$uid, $title, $description, $thumbnail, $level, $category, $duration]);
 $cid = (int) $pdo->lastInsertId();
