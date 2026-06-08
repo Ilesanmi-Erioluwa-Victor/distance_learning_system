@@ -13,7 +13,7 @@ function generateOTP(int $length = 6): string
 
 function redirect(string $path): void
 {
-    header('Location: ' . BASE_URL . $path);
+    header('Location: ' . $path);
     exit;
 }
 
