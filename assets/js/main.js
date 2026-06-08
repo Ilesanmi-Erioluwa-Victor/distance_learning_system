@@ -152,10 +152,6 @@
         });
     }, 5000);
 
-    // Expose BASE_URL globally
-    const baseMeta = document.querySelector('meta[name="base-url"]');
-    if (baseMeta) window.BASE_URL = baseMeta.content;
-
     // Tabs
     document.querySelectorAll('.tab-item').forEach(tab => {
         tab.addEventListener('click', function () {
