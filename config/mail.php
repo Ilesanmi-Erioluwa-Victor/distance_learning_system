@@ -79,8 +79,12 @@ function sendViaBrevo(string $apiKey, string $toEmail, string $toName, string $s
     $error = curl_error($ch);
     curl_close($ch);
 
-    if ($error) return 'cURL error: ' . $error;
+    if ($error) {
+        error_log("Mail: cURL error to $toEmail: $error");
+        return 'cURL error: ' . $error;
+    }
     if ($httpCode >= 200 && $httpCode < 300) return '';
+    error_log("Mail: Brevo error (HTTP $httpCode) to $toEmail: $response");
     return "Brevo error (HTTP $httpCode): " . $response;
 }
 
