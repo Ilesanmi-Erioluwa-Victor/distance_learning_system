@@ -21,7 +21,7 @@ $pageTitle = 'Reset Password';
 <div class="auth-wrapper">
     <div class="auth-card">
         <div class="auth-logo">
-            <div class="logo-mark">W</div>
+            <div class="logo-mark">D</div>
             <h1>Set New Password</h1>
             <p>For: <strong><?php echo htmlspecialchars($email); ?></strong></p>
         </div>

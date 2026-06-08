@@ -27,7 +27,7 @@ $redirect = $_GET['redirect'] ?? '';
 <div class="auth-wrapper">
     <div class="auth-card">
         <div class="auth-logo">
-            <div class="logo-mark">W</div>
+            <div class="logo-mark">D</div>
             <h1>DSPoly</h1>
             <p>Delta State Polytechnic Distance Learning</p>
         </div>

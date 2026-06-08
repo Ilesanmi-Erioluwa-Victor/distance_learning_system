@@ -5,6 +5,18 @@ require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/auth.php';
 
 $email = trim($_GET['email'] ?? $_POST['email'] ?? '');
+
+$storedOtp = '';
+if ($email !== '') {
+    $pdo = Database::getConnection();
+    $stmt = $pdo->prepare("SELECT otp_code, is_verified FROM users WHERE email = ?");
+    $stmt->execute([$email]);
+    $u = $stmt->fetch();
+    if ($u && !$u['is_verified'] && $u['otp_code']) {
+        $storedOtp = $u['otp_code'];
+    }
+}
+
 $pageTitle = 'Verify Email';
 ?>
 <!DOCTYPE html>
@@ -22,10 +34,16 @@ $pageTitle = 'Verify Email';
 <div class="auth-wrapper">
     <div class="auth-card">
         <div class="auth-logo">
-            <div class="logo-mark">W</div>
+            <div class="logo-mark">D</div>
             <h1>Verify Your Email</h1>
             <p>Enter the 6-digit code sent to <strong><?php echo htmlspecialchars($email); ?></strong></p>
         </div>
+
+        <?php if ($storedOtp): ?>
+            <div class="alert alert-info">
+                Your verification code is: <strong style="font-size:1.4rem;letter-spacing:4px;"><?php echo htmlspecialchars($storedOtp); ?></strong>
+            </div>
+        <?php endif; ?>
 
         <?php renderFlash(); ?>
 

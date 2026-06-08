@@ -20,7 +20,7 @@ $pageTitle = 'Forgot Password';
 <div class="auth-wrapper">
     <div class="auth-card">
         <div class="auth-logo">
-            <div class="logo-mark">W</div>
+            <div class="logo-mark">D</div>
             <h1>Reset Password</h1>
             <p>Enter your email to receive a reset code</p>
         </div>
