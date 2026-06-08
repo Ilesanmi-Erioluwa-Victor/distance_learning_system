@@ -4,6 +4,9 @@ use PHPMailer\PHPMailer\Exception;
 
 function sendEmail(string $toEmail, string $toName, string $subject, string $htmlBody): string
 {
+    if (MAIL_USER === '' || MAIL_APP_PASSWORD === '') {
+        return 'MAIL_USER or MAIL_APP_PASSWORD is empty';
+    }
     $mail = new PHPMailer(true);
     try {
         $mail->isSMTP();

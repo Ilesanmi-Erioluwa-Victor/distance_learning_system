@@ -63,11 +63,11 @@ if (!defined('BASE_URL')) {
 }
 
 if (!defined('MAIL_USER')) {
-    define('MAIL_USER', $_ENV['MAIL_USER'] ?? '');
+    define('MAIL_USER', $_ENV['MAIL_USER'] ?? getenv('MAIL_USER') ?? '');
 }
 
 if (!defined('MAIL_APP_PASSWORD')) {
-    define('MAIL_APP_PASSWORD', $_ENV['MAIL_APP_PASSWORD'] ?? '');
+    define('MAIL_APP_PASSWORD', $_ENV['MAIL_APP_PASSWORD'] ?? getenv('MAIL_APP_PASSWORD') ?? '');
 }
 
 // -----------------------------
