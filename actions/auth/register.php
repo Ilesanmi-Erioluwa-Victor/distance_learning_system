@@ -49,7 +49,7 @@ if ($stmt->fetch()) {
     redirect('/register.php');
 }
 
-$hash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
+$hash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 10]);
 $otp  = generateOTP(6);
 $otpExpires = (new DateTime('+10 minutes'))->format('Y-m-d H:i:s');
 
@@ -59,14 +59,6 @@ $stmt = $pdo->prepare("
 ");
 $stmt->execute([$first, $last, $email, $hash, $role, $otp, $otpExpires, $facultyId, $departmentId, $studentLevel]);
 
-// Try to send email
-$body = getOtpEmailHtml($first, $otp);
-$sent = sendEmail($email, $first, 'Verify your WBDLS account', $body);
-
-if ($sent) {
-    setFlash('success', 'Account created! Check your email for the verification code.');
-} else {
-    // Fall back: still show the OTP on screen for development
-    setFlash('warning', 'Account created! Email could not be sent. For development, your code is: ' . $otp);
-}
+// Show OTP directly (email sending disabled on Render free tier)
+setFlash('info', 'Your verification code is: ' . $otp);
 redirect('/verify_email.php?email=' . urlencode($email));
