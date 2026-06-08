@@ -9,18 +9,19 @@ echo "BREVO_API_KEY: " . (defined('BREVO_API_KEY') && BREVO_API_KEY !== '' ? '[S
 echo "MAIL_USER: '" . (defined('MAIL_USER') ? MAIL_USER : 'N/A') . "'\n";
 echo "MAIL_APP_PASSWORD: " . (defined('MAIL_APP_PASSWORD') && MAIL_APP_PASSWORD !== '' ? '[SET]' : '[EMPTY]') . "\n\n";
 
-echo "Sending test email to: " . (defined('MAIL_USER') ? MAIL_USER : 'not set') . "\n\n";
+$from = defined('MAIL_USER') ? MAIL_USER : 'ilesanmierioluwavictor@gmail.com';
 
-$err = sendEmail(
-    defined('MAIL_USER') ? MAIL_USER : 'test@example.com',
-    'Test',
-    'Test from DSPoly',
-    '<p>This is a test email.</p>'
-);
+// Test 1: send to self (same as from address)
+echo "--- Test 1: Send to self ($from) ---\n";
+$err1 = sendEmail($from, 'Test', 'Test from DSPoly', '<p>Self-test email.</p>');
+echo $err1 === '' ? "✓ PASSED\n" : "✗ FAILED: $err1\n";
 
-if ($err === '') {
-    echo "✓ SUCCESS: Email sent! Check your inbox.\n";
-} else {
-    echo "✗ FAILED: $err\n";
-}
+// Test 2: ask Brevo why it might fail with external addresses
+echo "\n--- Test 2: Check sender verification ---\n";
+echo "You must verify the sender email in Brevo:\n";
+echo "1. Go to https://app.brevo.com/senders/\n";
+echo "2. Click 'Add a Sender' or verify \"$from\"\n";
+echo "3. Check your Gmail inbox for the verification link\n\n";
+
+echo "After verification, registration OTP emails will work.\n";
 echo "\n</pre>";
