@@ -52,11 +52,15 @@ function sendViaBrevo(string $apiKey, string $toEmail, string $toName, string $s
 {
     $from = defined('MAIL_USER') ? MAIL_USER : (getenv('MAIL_USER') ?: 'ilesanmierioluwavictor@gmail.com');
 
+    $textContent = strip_tags(str_replace(['<br>', '<br/>', '<br />', '</p>', '</div>', '</h1>', '</h2>', '</h3>', '</li>'], "\n", $htmlBody));
+    $textContent = preg_replace('/\n\s*\n\s*\n/', "\n\n", $textContent);
+
     $payload = json_encode([
-        'sender'     => ['email' => $from, 'name' => 'DSPoly e-Learning Portal'],
-        'to'         => [['email' => $toEmail, 'name' => $toName]],
-        'subject'    => $subject,
+        'sender'      => ['email' => $from, 'name' => 'DSPoly e-Learning Portal'],
+        'to'          => [['email' => $toEmail, 'name' => $toName]],
+        'subject'     => $subject,
         'htmlContent' => $htmlBody,
+        'textContent' => trim($textContent),
     ]);
 
     $ch = curl_init('https://api.brevo.com/v3/smtp/email');
@@ -91,41 +95,52 @@ function usePHPMailer(): void
 
 function getOtpEmailHtml(string $firstName, string $otp): string
 {
-    return '
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <style>
-        body { font-family: Segoe UI, sans-serif; background: #f8fafc; margin:0; padding:20px; }
-        .container { max-width: 500px; margin: auto; background: #fff;
-                     border-radius: 10px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,.1); }
-        .header { background: #1D4ED8; padding: 24px 32px; color: #fff; }
-        .header h1 { margin:0; font-size:20px; }
-        .header p { margin:4px 0 0; font-size:13px; opacity:.85; }
-        .body { padding: 32px; }
-        .otp-box { background: #dbeafe; border: 2px dashed #1D4ED8;
-                   border-radius: 8px; text-align: center; padding: 20px; margin: 24px 0; }
-        .otp-box span { font-size: 36px; font-weight: 700; letter-spacing: 10px; color: #1D4ED8; }
-        .footer { background: #f1f5f9; padding: 16px 32px; font-size: 12px; color: #64748b;
-                  text-align: center; }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <h1>Delta State Polytechnic</h1>
-          <p>Web-Based Distance Learning System</p>
-        </div>
-        <div class="body">
-          <p>Hello <strong>' . htmlspecialchars($firstName) . '</strong>,</p>
-          <p>Use the code below to verify your email address. This code expires in <strong>10 minutes</strong>.</p>
-          <div class="otp-box"><span>' . $otp . '</span></div>
-          <p>If you did not create an account, please ignore this email.</p>
-        </div>
-        <div class="footer">
-          &copy; ' . date('Y') . ' Delta State Polytechnic, Otefe-Oghara, Delta State, Nigeria
-        </div>
+    $name = htmlspecialchars($firstName);
+    $year = date('Y');
+    return <<<HTML
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { margin:0; padding:0; background:#f4f6f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
+    .wrapper { padding: 32px 16px; }
+    .container { max-width:520px; margin:0 auto; background:#ffffff; border-radius:12px; overflow:hidden; box-shadow:0 2px 12px rgba(0,0,0,0.08); }
+    .header { background:linear-gradient(135deg, #1D4ED8, #3B82F6); padding:28px 36px; text-align:center; }
+    .header h1 { margin:0; color:#ffffff; font-size:22px; font-weight:700; letter-spacing:0.3px; }
+    .header p { margin:6px 0 0; color:rgba(255,255,255,0.85); font-size:13px; }
+    .body { padding:36px; }
+    .body p { color:#334155; font-size:15px; line-height:1.6; margin:0 0 16px; }
+    .otp-label { text-align:center; color:#64748b; font-size:13px; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:8px; }
+    .otp-box { background:#EEF2FF; border:2px dashed #6366F1; border-radius:12px; text-align:center; padding:16px; margin:16px 0 24px; }
+    .otp-box span { font-size:40px; font-weight:800; letter-spacing:12px; color:#1D4ED8; font-family: 'Courier New', Courier, monospace; }
+    .divider { height:1px; background:#e2e8f0; margin:24px 0; }
+    .footer { background:#f8fafc; padding:20px 36px; text-align:center; }
+    .footer p { color:#94a3b8; font-size:12px; line-height:1.5; margin:0; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="container">
+      <div class="header">
+        <h1>Delta State Polytechnic</h1>
+        <p>Web-Based Distance Learning System</p>
       </div>
-    </body>
-    </html>';
+      <div class="body">
+        <p>Hello <strong>$name</strong>,</p>
+        <p>Thank you for creating an account. Use the verification code below to complete your registration. This code expires in <strong>10 minutes</strong>.</p>
+        <div class="otp-label">Verification Code</div>
+        <div class="otp-box"><span>$otp</span></div>
+        <p style="font-size:13px; color:#94a3b8;">If you did not create this account, please ignore this email.</p>
+      </div>
+      <div class="divider"></div>
+      <div class="footer">
+        <p>&copy; $year Delta State Polytechnic, Otefe-Oghara, Delta State, Nigeria</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+HTML;
 }
