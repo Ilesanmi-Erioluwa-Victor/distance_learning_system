@@ -114,7 +114,7 @@ include __DIR__ . '/../includes/header.php';
             <div class="modal-body">
                 <div class="form-group">
                     <label class="form-label">Course</label>
-                    <select name="course_id" class="form-select" required>
+                    <select name="course_id" id="modalCourseSelect" class="form-select" required>
                         <option value="">Select...</option>
                         <?php foreach ($myCourses as $c): ?>
                             <option value="<?php echo $c['id']; ?>"><?php echo htmlspecialchars($c['title']); ?></option>
@@ -153,7 +153,7 @@ include __DIR__ . '/../includes/header.php';
 </div>
 
 <script>
-document.querySelector('select[name="course_id"]').addEventListener('change', async function() {
+document.getElementById('modalCourseSelect').addEventListener('change', async function() {
     const cid = this.value;
     const sel = document.getElementById('moduleSelect');
     sel.innerHTML = '<option>Loading...</option>';
