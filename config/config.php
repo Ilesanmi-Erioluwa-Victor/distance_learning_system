@@ -75,7 +75,7 @@ if (!defined('MAIL_APP_PASSWORD')) {
 // -----------------------------
 define('UPLOAD_DIR', __DIR__ . '/../uploads/');
 define('UPLOAD_URL', BASE_URL . '/uploads/');
-define('APP_NAME', 'WBDLS — Delta State Polytechnic');
+define('APP_NAME', 'DSPoly e-Learning Portal');
 define('SESSION_NAME', 'wbdls_session');
 
 // -----------------------------

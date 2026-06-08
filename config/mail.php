@@ -17,7 +17,7 @@ function sendEmail(string $toEmail, string $toName, string $subject, string $htm
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $mail->Port       = 587;
 
-        $mail->setFrom(MAIL_USER, 'WBDLS — Delta State Polytechnic');
+        $mail->setFrom(MAIL_USER, 'DSPoly e-Learning Portal');
         $mail->addAddress($toEmail, $toName);
         $mail->isHTML(true);
         $mail->Subject = $subject;

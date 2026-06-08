@@ -62,7 +62,7 @@ $stmt->execute([$first, $last, $email, $hash, $role, $otp, $otpExpires, $faculty
 // Send email if configured, otherwise show OTP directly
 if (defined('MAIL_USER') && MAIL_USER !== '') {
     $body = getOtpEmailHtml($first, $otp);
-    $err = sendEmail($email, $first, 'Verify your WBDLS account', $body);
+    $err = sendEmail($email, $first, 'Verify your DSPoly e-Learning account', $body);
     if ($err === '') {
         setFlash('success', 'Account created! Check your email for the verification code.');
         redirect('/verify_email.php?email=' . urlencode($email));

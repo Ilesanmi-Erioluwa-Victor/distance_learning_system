@@ -20,6 +20,7 @@ $pageTitle = 'Register';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register — <?php echo APP_NAME; ?></title>
+    <link rel="icon" type="image/svg+xml" href="<?php echo BASE_URL; ?>/assets/images/favicon.svg">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>/assets/css/main.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>/assets/css/auth.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>/assets/css/responsive.css">
@@ -30,7 +31,7 @@ $pageTitle = 'Register';
         <div class="auth-logo">
             <div class="logo-mark">W</div>
             <h1>Create Account</h1>
-            <p>Join the WBDLS learning community</p>
+            <p>Join the DSPoly e-Learning community</p>
         </div>
 
         <?php renderFlash(); ?>

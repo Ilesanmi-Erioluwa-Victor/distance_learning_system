@@ -18,6 +18,7 @@ if ($currentUser) {
     <meta name="csrf-token" content="<?php echo getCsrfToken(); ?>">
     <meta name="base-url" content="<?php echo BASE_URL; ?>">
     <title><?php echo htmlspecialchars($pageTitle . ' — ' . APP_NAME); ?></title>
+    <link rel="icon" type="image/svg+xml" href="<?php echo BASE_URL; ?>/assets/images/favicon.svg">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>/assets/css/main.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>/assets/css/auth.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>/assets/css/dashboard.css">
@@ -37,8 +38,8 @@ if ($currentUser) {
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <a href="<?php echo BASE_URL; ?>/<?php echo $currentUser['role']; ?>/dashboard.php" class="sidebar-logo">
-                <span class="logo-mark">W</span>
-                <span class="logo-text">WBDLS</span>
+                <span class="logo-mark">D</span>
+                <span class="logo-text">DSPoly</span>
             </a>
         </div>
         <nav class="sidebar-nav">
@@ -76,8 +77,8 @@ if ($currentUser) {
     <header class="public-header">
         <div class="public-nav container">
             <a href="<?php echo BASE_URL; ?>/index.php" class="nav-logo">
-                <span class="logo-mark">W</span>
-                <span class="logo-text">WBDLS</span>
+                <span class="logo-mark">D</span>
+                <span class="logo-text">DSPoly</span>
             </a>
             <nav class="public-nav-links">
                 <a href="<?php echo BASE_URL; ?>/index.php">Home</a>

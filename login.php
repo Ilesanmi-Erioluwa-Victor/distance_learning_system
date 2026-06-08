@@ -18,6 +18,7 @@ $redirect = $_GET['redirect'] ?? '';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login — <?php echo APP_NAME; ?></title>
+    <link rel="icon" type="image/svg+xml" href="<?php echo BASE_URL; ?>/assets/images/favicon.svg">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>/assets/css/main.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>/assets/css/auth.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>/assets/css/responsive.css">
@@ -27,7 +28,7 @@ $redirect = $_GET['redirect'] ?? '';
     <div class="auth-card">
         <div class="auth-logo">
             <div class="logo-mark">W</div>
-            <h1>WBDLS</h1>
+            <h1>DSPoly</h1>
             <p>Delta State Polytechnic Distance Learning</p>
         </div>
         <h2>Welcome Back</h2>
