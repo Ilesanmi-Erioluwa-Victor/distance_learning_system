@@ -59,7 +59,6 @@ $stmt = $pdo->prepare("
 ");
 $stmt->execute([$first, $last, $email, $hash, $role, $otp, $otpExpires, $facultyId, $departmentId, $studentLevel]);
 
-// Send email if configured, otherwise show OTP directly
 if (defined('MAIL_USER') && MAIL_USER !== '') {
     $body = getOtpEmailHtml($first, $otp);
     $err = sendEmail($email, $first, 'Verify your DSPoly e-Learning account', $body);
@@ -67,8 +66,8 @@ if (defined('MAIL_USER') && MAIL_USER !== '') {
         setFlash('success', 'Account created! Check your email for the verification code.');
         redirect('/verify_email.php?email=' . urlencode($email));
     }
-    setFlash('warning', 'Mail error: ' . $err . ' — Your code is: ' . $otp);
+    setFlash('error', 'Could not send verification email. Mail error: ' . $err);
     redirect('/verify_email.php?email=' . urlencode($email));
 }
-setFlash('info', 'Your verification code is: ' . $otp);
+setFlash('error', 'Mail is not configured. Set MAIL_USER and MAIL_APP_PASSWORD on Render.');
 redirect('/verify_email.php?email=' . urlencode($email));

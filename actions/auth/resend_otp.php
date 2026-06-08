@@ -27,9 +27,9 @@ if ($user && !$user['is_verified']) {
             setFlash('success', 'A new code has been sent to your email.');
             redirect('/verify_email.php?email=' . urlencode($email));
         }
-        setFlash('warning', 'Mail error: ' . $err . ' — Your new code is: ' . $otp);
+        setFlash('error', 'Could not send email. Mail error: ' . $err);
     } else {
-        setFlash('info', 'Your new verification code is: ' . $otp);
+        setFlash('error', 'Mail is not configured. Set MAIL_USER and MAIL_APP_PASSWORD on Render.');
     }
 } else {
     setFlash('info', 'If the email exists and is unverified, a code was sent.');

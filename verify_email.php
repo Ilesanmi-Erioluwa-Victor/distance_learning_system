@@ -39,12 +39,6 @@ $pageTitle = 'Verify Email';
             <p>Enter the 6-digit code sent to <strong><?php echo htmlspecialchars($email); ?></strong></p>
         </div>
 
-        <?php if ($storedOtp): ?>
-            <div class="alert alert-info">
-                Your verification code is: <strong style="font-size:1.4rem;letter-spacing:4px;"><?php echo htmlspecialchars($storedOtp); ?></strong>
-            </div>
-        <?php endif; ?>
-
         <?php renderFlash(); ?>
 
         <?php if ($email): ?>
