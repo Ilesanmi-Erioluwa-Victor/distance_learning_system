@@ -2,7 +2,7 @@
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-function sendEmail(string $toEmail, string $toName, string $subject, string $htmlBody): bool
+function sendEmail(string $toEmail, string $toName, string $subject, string $htmlBody): string
 {
     $mail = new PHPMailer(true);
     try {
@@ -21,10 +21,9 @@ function sendEmail(string $toEmail, string $toName, string $subject, string $htm
         $mail->Body    = $htmlBody;
 
         $mail->send();
-        return true;
+        return '';
     } catch (Exception $e) {
-        error_log('Mail error: ' . $mail->ErrorInfo);
-        return false;
+        return $mail->ErrorInfo;
     }
 }
 

@@ -23,7 +23,9 @@ if ($user && !$user['is_verified']) {
     $sent = false;
     if (defined('MAIL_USER') && MAIL_USER !== '') {
         $body = getOtpEmailHtml($user['first_name'], $otp);
-        $sent = sendEmail($email, $user['first_name'], 'Verify your WBDLS account', $body);
+        $err = sendEmail($email, $user['first_name'], 'Verify your WBDLS account', $body);
+        $sent = ($err === '');
+        if (!$sent) error_log('Mail error (resend): ' . $err);
     }
     if ($sent) {
         setFlash('success', 'A new code has been sent to your email.');

@@ -62,11 +62,12 @@ $stmt->execute([$first, $last, $email, $hash, $role, $otp, $otpExpires, $faculty
 // Send email if configured, otherwise show OTP directly
 if (defined('MAIL_USER') && MAIL_USER !== '') {
     $body = getOtpEmailHtml($first, $otp);
-    $sent = sendEmail($email, $first, 'Verify your WBDLS account', $body);
-    if ($sent) {
+    $err = sendEmail($email, $first, 'Verify your WBDLS account', $body);
+    if ($err === '') {
         setFlash('success', 'Account created! Check your email for the verification code.');
         redirect('/verify_email.php?email=' . urlencode($email));
     }
+    error_log('Mail error: ' . $err);
 }
 setFlash('info', 'Your verification code is: ' . $otp);
 redirect('/verify_email.php?email=' . urlencode($email));
