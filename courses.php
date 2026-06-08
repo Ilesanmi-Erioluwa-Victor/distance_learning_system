@@ -11,7 +11,7 @@ $level   = trim($_GET['level'] ?? '');
 $page    = max(1, (int)($_GET['page'] ?? 1));
 $perPage = 12;
 
-$where = ["c.is_published = 1"];
+$where = ["c.is_published"];
 $params = [];
 
 if ($search !== '') {

@@ -8,6 +8,6 @@ header('Content-Type: application/json');
 
 $uid = (int)currentUserId();
 $pdo = Database::getConnection();
-$stmt = $pdo->prepare("UPDATE notifications SET is_read = 1 WHERE user_id = ?");
+$stmt = $pdo->prepare("UPDATE notifications SET is_read = TRUE WHERE user_id = ?");
 $stmt->execute([$uid]);
 echo json_encode(['ok' => true]);

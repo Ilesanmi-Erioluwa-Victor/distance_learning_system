@@ -24,7 +24,7 @@ if (!$user) {
     redirect('/verify_email.php?email=' . urlencode($email));
 }
 
-$stmt = $pdo->prepare("UPDATE users SET is_verified = 1, otp_code = NULL, otp_expires_at = NULL WHERE id = ?");
+$stmt = $pdo->prepare("UPDATE users SET is_verified = TRUE, otp_code = NULL, otp_expires_at = NULL WHERE id = ?");
 $stmt->execute([$user['id']]);
 
 setFlash('success', 'Email verified! You can now log in.');

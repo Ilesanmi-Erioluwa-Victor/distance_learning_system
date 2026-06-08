@@ -11,7 +11,7 @@ $courseId = (int)($_POST['course_id'] ?? 0);
 if (!$courseId) { setFlash('error', 'Invalid course.'); redirect('/courses.php'); }
 
 $pdo = Database::getConnection();
-$stmt = $pdo->prepare("SELECT * FROM courses WHERE id = ? AND is_published = 1");
+$stmt = $pdo->prepare("SELECT * FROM courses WHERE id = ? AND is_published");
 $stmt->execute([$courseId]);
 $course = $stmt->fetch();
 if (!$course) { setFlash('error', 'Course not available.'); redirect('/courses.php'); }

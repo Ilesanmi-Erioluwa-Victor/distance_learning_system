@@ -47,7 +47,7 @@ foreach ($rows as $r) {
 }
 
 // Completed lessons
-$stmt = $pdo->prepare("SELECT lesson_id FROM lesson_progress WHERE student_id = ? AND completed = 1");
+$stmt = $pdo->prepare("SELECT lesson_id FROM lesson_progress WHERE student_id = ? AND completed");
 $stmt->execute([$uid]);
 $completedIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
 

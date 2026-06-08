@@ -13,7 +13,7 @@ $pdo = Database::getConnection();
 $stmt = $pdo->prepare("
     SELECT c.*, u.first_name, u.last_name, u.bio, u.profile_photo
     FROM courses c JOIN users u ON c.instructor_id = u.id
-    WHERE c.id = ? AND c.is_published = 1
+    WHERE c.id = ? AND c.is_published
 ");
 $stmt->execute([$id]);
 $course = $stmt->fetch();
@@ -161,7 +161,7 @@ include __DIR__ . '/includes/header.php';
                         SELECT l.id FROM lessons l
                         JOIN modules m ON l.module_id = m.id
                         WHERE m.course_id = ?
-                          AND l.id NOT IN (SELECT lesson_id FROM lesson_progress WHERE student_id = ? AND completed = 1)
+                          AND l.id NOT IN (SELECT lesson_id FROM lesson_progress WHERE student_id = ? AND completed)
                         ORDER BY m.sort_order, l.sort_order
                         LIMIT 1
                     ");

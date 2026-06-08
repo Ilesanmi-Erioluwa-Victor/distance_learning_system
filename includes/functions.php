@@ -44,7 +44,7 @@ function createNotification(int $userId, string $message, string $type, string $
 function getUnreadNotificationCount(int $userId): int
 {
     $pdo = Database::getConnection();
-    $stmt = $pdo->prepare("SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0");
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM notifications WHERE user_id = ? AND NOT is_read");
     $stmt->execute([$userId]);
     return (int) $stmt->fetchColumn();
 }
@@ -113,7 +113,7 @@ function calculateCourseProgress(int $studentId, int $courseId): float
         FROM lesson_progress lp
         JOIN lessons l ON lp.lesson_id = l.id
         JOIN modules m ON l.module_id = m.id
-        WHERE m.course_id = ? AND lp.student_id = ? AND lp.completed = 1
+        WHERE m.course_id = ? AND lp.student_id = ? AND lp.completed
     ");
     $stmt->execute([$courseId, $studentId]);
     $completed = (int) $stmt->fetchColumn();

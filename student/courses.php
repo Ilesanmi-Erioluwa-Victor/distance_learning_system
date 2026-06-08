@@ -56,7 +56,7 @@ include __DIR__ . '/../includes/header.php';
             $stmt2 = $pdo->prepare("
                 SELECT l.id FROM lessons l JOIN modules m ON l.module_id = m.id
                 WHERE m.course_id = ?
-                  AND l.id NOT IN (SELECT lesson_id FROM lesson_progress WHERE student_id = ? AND completed = 1)
+                  AND l.id NOT IN (SELECT lesson_id FROM lesson_progress WHERE student_id = ? AND completed)
                 ORDER BY m.sort_order, l.sort_order LIMIT 1
             ");
             $stmt2->execute([$c['id'], $uid]);

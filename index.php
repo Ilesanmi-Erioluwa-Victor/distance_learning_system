@@ -6,9 +6,9 @@ require_once __DIR__ . '/includes/functions.php';
 $pdo = Database::getConnection();
 
 // Stats
-$studentCount    = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role='student' AND is_active=1")->fetchColumn();
-$courseCount     = (int) $pdo->query("SELECT COUNT(*) FROM courses WHERE is_published=1")->fetchColumn();
-$instructorCount = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role='instructor' AND is_active=1")->fetchColumn();
+$studentCount    = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role='student' AND is_active")->fetchColumn();
+$courseCount     = (int) $pdo->query("SELECT COUNT(*) FROM courses WHERE is_published")->fetchColumn();
+$instructorCount = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role='instructor' AND is_active")->fetchColumn();
 
 // Featured courses (top 6 by enrollment)
 $stmt = $pdo->query("
@@ -16,7 +16,7 @@ $stmt = $pdo->query("
            (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) as enroll_count
     FROM courses c
     JOIN users u ON c.instructor_id = u.id
-    WHERE c.is_published = 1
+    WHERE c.is_published
     ORDER BY enroll_count DESC, c.created_at DESC
     LIMIT 6
 ");

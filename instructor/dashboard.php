@@ -27,7 +27,7 @@ $stmt = $pdo->prepare("
 $stmt->execute([$uid]);
 $pendingSubmissions = (int) $stmt->fetchColumn();
 
-$stmt = $pdo->prepare("SELECT COUNT(*) FROM quizzes q JOIN courses c ON q.course_id = c.id WHERE c.instructor_id = ? AND q.is_published = 1");
+$stmt = $pdo->prepare("SELECT COUNT(*) FROM quizzes q JOIN courses c ON q.course_id = c.id WHERE c.instructor_id = ? AND q.is_published");
 $stmt->execute([$uid]);
 $quizzesPublished = (int) $stmt->fetchColumn();
 

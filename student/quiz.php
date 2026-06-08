@@ -15,7 +15,7 @@ $uid = (int) getCurrentUser()['id'];
 $stmt = $pdo->prepare("
     SELECT q.*, c.title as course_title, c.id as course_id
     FROM quizzes q JOIN courses c ON q.course_id = c.id
-    WHERE q.id = ? AND q.is_published = 1
+    WHERE q.id = ? AND q.is_published
 ");
 $stmt->execute([$quizId]);
 $quiz = $stmt->fetch();

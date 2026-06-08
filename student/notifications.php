@@ -12,7 +12,7 @@ $stmt->execute([$uid]);
 $rows = $stmt->fetchAll();
 
 // Mark all read
-$pdo->prepare("UPDATE notifications SET is_read = 1 WHERE user_id = ?")->execute([$uid]);
+$pdo->prepare("UPDATE notifications SET is_read = TRUE WHERE user_id = ?")->execute([$uid]);
 
 $pageTitle = 'Notifications';
 include __DIR__ . '/../includes/header.php';
