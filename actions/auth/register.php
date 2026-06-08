@@ -55,7 +55,7 @@ $otpExpires = (new DateTime('+10 minutes'))->format('Y-m-d H:i:s');
 
 $stmt = $pdo->prepare("
     INSERT INTO users (first_name, last_name, email, password, role, is_active, is_verified, otp_code, otp_expires_at, faculty_id, department_id, student_level)
-    VALUES (?, ?, ?, ?, ?, 1, 0, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, TRUE, FALSE, ?, ?, ?, ?, ?)
 ");
 $stmt->execute([$first, $last, $email, $hash, $role, $otp, $otpExpires, $facultyId, $departmentId, $studentLevel]);
 
