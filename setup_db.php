@@ -156,11 +156,10 @@ if ($failed === 0) {
     foreach ($courses as $c) {
         $stmt = $pdo->prepare("
             INSERT INTO courses (instructor_id, title, description, category, level, duration, is_published)
-            VALUES (?, ?, ?, ?, ?, ?, 1)
+            VALUES (?, ?, ?, ?, ?, ?, TRUE)
         ");
         $stmt->execute($c);
     }
-    echo "- Courses inserted\n";
 
     // Fetch course IDs
     $stmt = $pdo->query("SELECT id FROM courses ORDER BY id LIMIT 3");
@@ -217,7 +216,7 @@ if ($failed === 0) {
     if ($check->fetchColumn() == 0) {
         $stmt = $pdo->prepare("
             INSERT INTO quizzes (course_id, title, description, time_limit, max_attempts, pass_mark, is_published)
-            VALUES (?, 'Introduction Quiz', 'Test your knowledge of Module 1.', 15, 2, 50, 1)
+            VALUES (?, 'Introduction Quiz', 'Test your knowledge of Module 1.', 15, 2, 50, TRUE)
         ");
         $stmt->execute([$courseIds[0]]);
         $quizId = $pdo->lastInsertId();

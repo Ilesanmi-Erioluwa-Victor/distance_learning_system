@@ -42,6 +42,10 @@ if (!defined('DB_HOST')) {
     define('DB_HOST', $stripProtocol($rawHost));
 }
 
+if (!defined('DB_PORT')) {
+    define('DB_PORT', $_ENV['PGPORT'] ?? $_ENV['DB_PORT'] ?? '5432');
+}
+
 if (!defined('DB_NAME')) {
     define('DB_NAME', $_ENV['PGDATABASE'] ?? $_ENV['DB_NAME'] ?? 'wbdls');
 }
