@@ -58,6 +58,10 @@ INSERT INTO levels (name) VALUES ('ND1'), ('ND2'), ('HND1'), ('HND2') ON CONFLIC
 
 INSERT INTO semesters (name, sort_order) VALUES ('First', 1), ('Second', 2) ON CONFLICT (name) DO NOTHING;
 
--- If your courses still have the old `semester` text column, run instead:
--- UPDATE courses SET semester_id = (SELECT id FROM semesters WHERE name = courses.semester)
--- WHERE semester_id IS NULL AND semester IS NOT NULL;
+-- ====== Clean up old columns & constraints ======
+
+-- Drop the old CHECK constraint on level (it only allowed Beginner/Intermediate/Advanced)
+ALTER TABLE courses DROP CONSTRAINT IF EXISTS courses_level_check;
+
+-- Drop the old category column (replaced by department_id)
+ALTER TABLE courses DROP COLUMN IF EXISTS category;
