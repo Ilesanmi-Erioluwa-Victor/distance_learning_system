@@ -10,7 +10,8 @@ ini_set('display_errors', 1);
 
 $SECURE_KEY = "setup123";
 
-if (!isset($_GET['key']) || $_GET['key'] !== $SECURE_KEY) {
+$key = $_GET['key'] ?? ($argv[1] ?? '');
+if ($key !== $SECURE_KEY) {
     die("Unauthorized access");
 }
 
