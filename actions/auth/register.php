@@ -67,7 +67,8 @@ if (defined('MAIL_USER') && MAIL_USER !== '') {
         setFlash('success', 'Account created! Check your email for the verification code.');
         redirect('/verify_email.php?email=' . urlencode($email));
     }
-    error_log('Mail error: ' . $err);
+    setFlash('warning', 'Mail error: ' . $err . ' — Your code is: ' . $otp);
+    redirect('/verify_email.php?email=' . urlencode($email));
 }
 setFlash('info', 'Your verification code is: ' . $otp);
 redirect('/verify_email.php?email=' . urlencode($email));
