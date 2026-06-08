@@ -20,12 +20,15 @@ if ($user && !$user['is_verified']) {
     $otpExpires = (new DateTime('+10 minutes'))->format('Y-m-d H:i:s');
     $stmt = $pdo->prepare("UPDATE users SET otp_code = ?, otp_expires_at = ? WHERE id = ?");
     $stmt->execute([$otp, $otpExpires, $user['id']]);
-    $body = getOtpEmailHtml($user['first_name'], $otp);
-    $sent = sendEmail($email, $user['first_name'], 'Verify your WBDLS account', $body);
+    $sent = false;
+    if (defined('MAIL_USER') && MAIL_USER !== '') {
+        $body = getOtpEmailHtml($user['first_name'], $otp);
+        $sent = sendEmail($email, $user['first_name'], 'Verify your WBDLS account', $body);
+    }
     if ($sent) {
         setFlash('success', 'A new code has been sent to your email.');
     } else {
-        setFlash('warning', 'Email could not be sent. Your new code is: ' . $otp);
+        setFlash('info', 'Your new verification code is: ' . $otp);
     }
 } else {
     setFlash('info', 'If the email exists and is unverified, a code was sent.');
