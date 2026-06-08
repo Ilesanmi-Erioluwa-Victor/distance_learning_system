@@ -70,8 +70,8 @@ if (!defined('MAIL_APP_PASSWORD')) {
     define('MAIL_APP_PASSWORD', $_ENV['MAIL_APP_PASSWORD'] ?? getenv('MAIL_APP_PASSWORD') ?? '');
 }
 
-if (!defined('SENDGRID_API_KEY')) {
-    define('SENDGRID_API_KEY', $_ENV['SENDGRID_API_KEY'] ?? getenv('SENDGRID_API_KEY') ?? '');
+if (!defined('BREVO_API_KEY')) {
+    define('BREVO_API_KEY', $_ENV['BREVO_API_KEY'] ?? getenv('BREVO_API_KEY') ?? '');
 }
 
 // -----------------------------

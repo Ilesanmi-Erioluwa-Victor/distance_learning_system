@@ -2,17 +2,17 @@
 
 function sendEmail(string $toEmail, string $toName, string $subject, string $htmlBody): string
 {
-    // Use SendGrid HTTP API if configured (works on Render since it uses port 443)
-    $sgKey = defined('SENDGRID_API_KEY') ? SENDGRID_API_KEY : (getenv('SENDGRID_API_KEY') ?: '');
-    if ($sgKey !== '') {
-        return sendViaSendGrid($sgKey, $toEmail, $toName, $subject, $htmlBody);
+    // Use Brevo (Sendinblue) HTTP API — works on Render (port 443)
+    $brevoKey = defined('BREVO_API_KEY') ? BREVO_API_KEY : (getenv('BREVO_API_KEY') ?: '');
+    if ($brevoKey !== '') {
+        return sendViaBrevo($brevoKey, $toEmail, $toName, $subject, $htmlBody);
     }
 
     // Fallback: try PHPMailer SMTP
     $from = defined('MAIL_USER') ? MAIL_USER : (getenv('MAIL_USER') ?: '');
     $pass = defined('MAIL_APP_PASSWORD') ? MAIL_APP_PASSWORD : (getenv('MAIL_APP_PASSWORD') ?: '');
     if ($from === '' || $pass === '') {
-        return 'No mail service configured. Set SENDGRID_API_KEY or MAIL_USER/MAIL_APP_PASSWORD.';
+        return 'No mail service configured. Set BREVO_API_KEY or MAIL_USER/MAIL_APP_PASSWORD.';
     }
     return sendViaPHPMailer($from, $pass, $toEmail, $toName, $subject, $htmlBody);
 }
@@ -48,23 +48,21 @@ function sendViaPHPMailer(string $from, string $pass, string $toEmail, string $t
     }
 }
 
-function sendViaSendGrid(string $apiKey, string $toEmail, string $toName, string $subject, string $htmlBody): string
+function sendViaBrevo(string $apiKey, string $toEmail, string $toName, string $subject, string $htmlBody): string
 {
     $from = defined('MAIL_USER') ? MAIL_USER : (getenv('MAIL_USER') ?: 'ilesanmierioluwavictor@gmail.com');
 
     $payload = json_encode([
-        'personalizations' => [
-            ['to' => [['email' => $toEmail, 'name' => $toName]]],
-        ],
-        'from' => ['email' => $from, 'name' => 'DSPoly e-Learning Portal'],
-        'subject' => $subject,
-        'content' => [['type' => 'text/html', 'value' => $htmlBody]],
+        'sender'     => ['email' => $from, 'name' => 'DSPoly e-Learning Portal'],
+        'to'         => [['email' => $toEmail, 'name' => $toName]],
+        'subject'    => $subject,
+        'htmlContent' => $htmlBody,
     ]);
 
-    $ch = curl_init('https://api.sendgrid.com/v3/mail/send');
+    $ch = curl_init('https://api.brevo.com/v3/smtp/email');
     curl_setopt_array($ch, [
         CURLOPT_HTTPHEADER => [
-            'Authorization: Bearer ' . $apiKey,
+            'api-key: ' . $apiKey,
             'Content-Type: application/json',
         ],
         CURLOPT_POST => true,
@@ -79,7 +77,7 @@ function sendViaSendGrid(string $apiKey, string $toEmail, string $toName, string
 
     if ($error) return 'cURL error: ' . $error;
     if ($httpCode >= 200 && $httpCode < 300) return '';
-    return "SendGrid error (HTTP $httpCode): " . $response;
+    return "Brevo error (HTTP $httpCode): " . $response;
 }
 
 function usePHPMailer(): void
