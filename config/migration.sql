@@ -58,6 +58,6 @@ INSERT INTO levels (name) VALUES ('ND1'), ('ND2'), ('HND1'), ('HND2') ON CONFLIC
 
 INSERT INTO semesters (name, sort_order) VALUES ('First', 1), ('Second', 2) ON CONFLICT (name) DO NOTHING;
 
--- Migrate existing courses: set semester_id based on old semester text column
-UPDATE courses SET semester_id = (SELECT id FROM semesters WHERE name = courses.semester)
-WHERE semester_id IS NULL AND semester IS NOT NULL;
+-- If your courses still have the old `semester` text column, run instead:
+-- UPDATE courses SET semester_id = (SELECT id FROM semesters WHERE name = courses.semester)
+-- WHERE semester_id IS NULL AND semester IS NOT NULL;
