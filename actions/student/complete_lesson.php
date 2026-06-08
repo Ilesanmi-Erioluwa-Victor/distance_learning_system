@@ -20,8 +20,8 @@ if (!$stmt->fetch()) { setFlash('error', 'Not enrolled.'); redirect('/student/da
 
 $stmt = $pdo->prepare("
     INSERT INTO lesson_progress (student_id, lesson_id, completed, completed_at)
-    VALUES (?, ?, 1, NOW())
-    ON DUPLICATE KEY UPDATE completed = 1, completed_at = NOW()
+    VALUES (?, ?, TRUE, NOW())
+    ON CONFLICT (student_id, lesson_id) DO UPDATE SET completed = TRUE, completed_at = NOW()
 ");
 $stmt->execute([$uid, $lessonId]);
 

@@ -47,8 +47,11 @@ $status = $isLate ? 'late' : 'submitted';
 $stmt = $pdo->prepare("
     INSERT INTO submissions (assignment_id, student_id, file_path, text_content, status, submitted_at)
     VALUES (?, ?, ?, ?, ?, NOW())
-    ON DUPLICATE KEY UPDATE file_path = VALUES(file_path), text_content = VALUES(text_content),
-                            status = VALUES(status), submitted_at = NOW()
+    ON CONFLICT (assignment_id, student_id) DO UPDATE SET
+        file_path = EXCLUDED.file_path,
+        text_content = EXCLUDED.text_content,
+        status = EXCLUDED.status,
+        submitted_at = NOW()
 ");
 $stmt->execute([$assignmentId, $uid, $filePath, $text, $status]);
 

@@ -38,20 +38,20 @@ $stripProtocol = function ($host) {
 };
 
 if (!defined('DB_HOST')) {
-    $rawHost = $_ENV['MYSQL_HOST'] ?? $_ENV['DB_HOST'] ?? 'localhost';
+    $rawHost = $_ENV['PGHOST'] ?? $_ENV['DB_HOST'] ?? 'localhost';
     define('DB_HOST', $stripProtocol($rawHost));
 }
 
 if (!defined('DB_NAME')) {
-    define('DB_NAME', $_ENV['MYSQL_DATABASE'] ?? $_ENV['DB_NAME'] ?? 'wbdls');
+    define('DB_NAME', $_ENV['PGDATABASE'] ?? $_ENV['DB_NAME'] ?? 'wbdls');
 }
 
 if (!defined('DB_USER')) {
-    define('DB_USER', $_ENV['MYSQL_USER'] ?? $_ENV['DB_USER'] ?? 'root');
+    define('DB_USER', $_ENV['PGUSER'] ?? $_ENV['DB_USER'] ?? 'root');
 }
 
 if (!defined('DB_PASS')) {
-    define('DB_PASS', $_ENV['MYSQL_PASSWORD'] ?? $_ENV['DB_PASS'] ?? '');
+    define('DB_PASS', $_ENV['PGPASSWORD'] ?? $_ENV['DB_PASS'] ?? '');
 }
 
 if (!defined('BASE_URL')) {

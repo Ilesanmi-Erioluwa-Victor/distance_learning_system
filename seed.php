@@ -40,8 +40,9 @@ $users = [
 
 foreach ($users as $u) {
     $stmt = $pdo->prepare("
-        INSERT IGNORE INTO users (first_name, last_name, email, password, role, is_active, is_verified)
+        INSERT INTO users (first_name, last_name, email, password, role, is_active, is_verified)
         VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT (email) DO NOTHING
     ");
     $stmt->execute($u);
 }
@@ -78,7 +79,6 @@ foreach ($courses as $c) {
     $stmt = $pdo->prepare("
         INSERT INTO courses (instructor_id, title, description, category, level, duration, is_published)
         VALUES (?, ?, ?, ?, ?, ?, 1)
-        ON DUPLICATE KEY UPDATE title = title
     ");
     $stmt->execute($c);
 }
@@ -131,8 +131,9 @@ echo "- Modules & lessons inserted\n";
 ========================================================= */
 foreach (array_slice($courseIds, 0, 2) as $courseId) {
     $stmt = $pdo->prepare("
-        INSERT IGNORE INTO enrollments (student_id, course_id)
+        INSERT INTO enrollments (student_id, course_id)
         VALUES (?, ?)
+        ON CONFLICT (student_id, course_id) DO NOTHING
     ");
     $stmt->execute([$studentId, $courseId]);
 }

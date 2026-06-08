@@ -1,210 +1,222 @@
 
+-- Auto-update trigger for updated_at columns
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 -- USERS
 CREATE TABLE IF NOT EXISTS users (
-    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    id          SERIAL PRIMARY KEY,
     first_name  VARCHAR(100) NOT NULL,
     last_name   VARCHAR(100) NOT NULL,
     email       VARCHAR(255) NOT NULL UNIQUE,
     password    VARCHAR(255) NOT NULL,
-    role        ENUM('admin','instructor','student') NOT NULL DEFAULT 'student',
+    role        VARCHAR(20) NOT NULL DEFAULT 'student' CHECK (role IN ('admin','instructor','student')),
     profile_photo VARCHAR(255) DEFAULT NULL,
     bio         TEXT DEFAULT NULL,
     phone       VARCHAR(20) DEFAULT NULL,
-    is_active   TINYINT(1) NOT NULL DEFAULT 1,
-    is_verified TINYINT(1) NOT NULL DEFAULT 0,
+    is_active   BOOLEAN NOT NULL DEFAULT TRUE,
+    is_verified BOOLEAN NOT NULL DEFAULT FALSE,
     otp_code    VARCHAR(10) DEFAULT NULL,
-    otp_expires_at DATETIME DEFAULT NULL,
+    otp_expires_at TIMESTAMP DEFAULT NULL,
     created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at  DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB;
+    updated_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+DROP TRIGGER IF EXISTS trg_users_updated_at ON users;
+CREATE TRIGGER trg_users_updated_at
+    BEFORE UPDATE ON users
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
 
 -- COURSES
 CREATE TABLE IF NOT EXISTS courses (
-    id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    instructor_id INT UNSIGNED NOT NULL,
+    id           SERIAL PRIMARY KEY,
+    instructor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     title        VARCHAR(255) NOT NULL,
     description  TEXT NOT NULL,
     thumbnail    VARCHAR(255) DEFAULT NULL,
-    level        ENUM('Beginner','Intermediate','Advanced') NOT NULL DEFAULT 'Beginner',
+    level        VARCHAR(20) NOT NULL DEFAULT 'Beginner' CHECK (level IN ('Beginner','Intermediate','Advanced')),
     category     VARCHAR(100) NOT NULL,
     duration     VARCHAR(50) DEFAULT NULL,
-    is_published TINYINT(1) NOT NULL DEFAULT 0,
+    is_published BOOLEAN NOT NULL DEFAULT FALSE,
     created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at   TIMESTAMP NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (instructor_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+    updated_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+DROP TRIGGER IF EXISTS trg_courses_updated_at ON courses;
+CREATE TRIGGER trg_courses_updated_at
+    BEFORE UPDATE ON courses
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
 
 -- MODULES
 CREATE TABLE IF NOT EXISTS modules (
-    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    course_id   INT UNSIGNED NOT NULL,
+    id          SERIAL PRIMARY KEY,
+    course_id   INTEGER NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
     title       VARCHAR(255) NOT NULL,
     description TEXT DEFAULT NULL,
-    sort_order  INT NOT NULL DEFAULT 0,
-    created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+    sort_order  INTEGER NOT NULL DEFAULT 0,
+    created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 
 -- LESSONS
 CREATE TABLE IF NOT EXISTS lessons (
-    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    module_id   INT UNSIGNED NOT NULL,
+    id          SERIAL PRIMARY KEY,
+    module_id   INTEGER NOT NULL REFERENCES modules(id) ON DELETE CASCADE,
     title       VARCHAR(255) NOT NULL,
-    content     LONGTEXT DEFAULT NULL,
+    content     TEXT DEFAULT NULL,
     video_url   VARCHAR(500) DEFAULT NULL,
     file_path   VARCHAR(255) DEFAULT NULL,
-    duration    INT DEFAULT NULL,
-    sort_order  INT NOT NULL DEFAULT 0,
-    created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+    duration    INTEGER DEFAULT NULL,
+    sort_order  INTEGER NOT NULL DEFAULT 0,
+    created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 
 -- ENROLLMENTS
 CREATE TABLE IF NOT EXISTS enrollments (
-    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    student_id  INT UNSIGNED NOT NULL,
-    course_id   INT UNSIGNED NOT NULL,
-    status      ENUM('active','completed','dropped') NOT NULL DEFAULT 'active',
+    id          SERIAL PRIMARY KEY,
+    student_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    course_id   INTEGER NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+    status      VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active','completed','dropped')),
     progress    DECIMAL(5,2) NOT NULL DEFAULT 0.00,
     enrolled_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at  TIMESTAMP NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_enrollment (student_id, course_id),
-    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (course_id)  REFERENCES courses(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+    updated_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (student_id, course_id)
+);
+
+DROP TRIGGER IF EXISTS trg_enrollments_updated_at ON enrollments;
+CREATE TRIGGER trg_enrollments_updated_at
+    BEFORE UPDATE ON enrollments
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
 
 -- LESSON PROGRESS
 CREATE TABLE IF NOT EXISTS lesson_progress (
-    id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    student_id   INT UNSIGNED NOT NULL,
-    lesson_id    INT UNSIGNED NOT NULL,
-    completed    TINYINT(1) NOT NULL DEFAULT 0,
-    completed_at DATETIME DEFAULT NULL,
-    UNIQUE KEY uq_progress (student_id, lesson_id),
-    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (lesson_id)  REFERENCES lessons(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+    id           SERIAL PRIMARY KEY,
+    student_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    lesson_id    INTEGER NOT NULL REFERENCES lessons(id) ON DELETE CASCADE,
+    completed    BOOLEAN NOT NULL DEFAULT FALSE,
+    completed_at TIMESTAMP DEFAULT NULL,
+    UNIQUE (student_id, lesson_id)
+);
 
 -- ASSIGNMENTS
 CREATE TABLE IF NOT EXISTS assignments (
-    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    module_id   INT UNSIGNED NOT NULL,
+    id          SERIAL PRIMARY KEY,
+    module_id   INTEGER NOT NULL REFERENCES modules(id) ON DELETE CASCADE,
     title       VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
-    due_date    DATETIME NOT NULL,
-    max_score   INT NOT NULL DEFAULT 100,
+    due_date    TIMESTAMP NOT NULL,
+    max_score   INTEGER NOT NULL DEFAULT 100,
     file_path   VARCHAR(255) DEFAULT NULL,
-    created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+    created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 
 -- SUBMISSIONS
 CREATE TABLE IF NOT EXISTS submissions (
-    id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    assignment_id INT UNSIGNED NOT NULL,
-    student_id    INT UNSIGNED NOT NULL,
+    id            SERIAL PRIMARY KEY,
+    assignment_id INTEGER NOT NULL REFERENCES assignments(id) ON DELETE CASCADE,
+    student_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     file_path     VARCHAR(255) DEFAULT NULL,
     text_content  TEXT DEFAULT NULL,
-    score         INT DEFAULT NULL,
+    score         INTEGER DEFAULT NULL,
     feedback      TEXT DEFAULT NULL,
-    status        ENUM('pending','submitted','graded','late') NOT NULL DEFAULT 'submitted',
+    status        VARCHAR(20) NOT NULL DEFAULT 'submitted' CHECK (status IN ('pending','submitted','graded','late')),
     submitted_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    graded_at     DATETIME DEFAULT NULL,
-    UNIQUE KEY uq_submission (assignment_id, student_id),
-    FOREIGN KEY (assignment_id) REFERENCES assignments(id) ON DELETE CASCADE,
-    FOREIGN KEY (student_id)    REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+    graded_at     TIMESTAMP DEFAULT NULL,
+    UNIQUE (assignment_id, student_id)
+);
 
 -- QUIZZES
 CREATE TABLE IF NOT EXISTS quizzes (
-    id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    course_id    INT UNSIGNED NOT NULL,
+    id           SERIAL PRIMARY KEY,
+    course_id    INTEGER NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
     title        VARCHAR(255) NOT NULL,
     description  TEXT DEFAULT NULL,
-    time_limit   INT DEFAULT NULL,
-    max_attempts INT NOT NULL DEFAULT 1,
-    pass_mark    INT NOT NULL DEFAULT 50,
-    is_published TINYINT(1) NOT NULL DEFAULT 0,
-    created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+    time_limit   INTEGER DEFAULT NULL,
+    max_attempts INTEGER NOT NULL DEFAULT 1,
+    pass_mark    INTEGER NOT NULL DEFAULT 50,
+    is_published BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 
 -- QUIZ QUESTIONS
 CREATE TABLE IF NOT EXISTS quiz_questions (
-    id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    quiz_id        INT UNSIGNED NOT NULL,
+    id             SERIAL PRIMARY KEY,
+    quiz_id        INTEGER NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
     question_text  TEXT NOT NULL,
     option_a       VARCHAR(500) NOT NULL,
     option_b       VARCHAR(500) NOT NULL,
     option_c       VARCHAR(500) NOT NULL,
     option_d       VARCHAR(500) NOT NULL,
-    correct_answer ENUM('A','B','C','D') NOT NULL,
-    points         INT NOT NULL DEFAULT 1,
-    sort_order     INT NOT NULL DEFAULT 0,
-    FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+    correct_answer VARCHAR(1) NOT NULL CHECK (correct_answer IN ('A','B','C','D')),
+    points         INTEGER NOT NULL DEFAULT 1,
+    sort_order     INTEGER NOT NULL DEFAULT 0
+);
 
 -- QUIZ ATTEMPTS
 CREATE TABLE IF NOT EXISTS quiz_attempts (
-    id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    quiz_id      INT UNSIGNED NOT NULL,
-    student_id   INT UNSIGNED NOT NULL,
-    answers      LONGTEXT NOT NULL,
-    score        INT NOT NULL,
+    id           SERIAL PRIMARY KEY,
+    quiz_id      INTEGER NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
+    student_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    answers      TEXT NOT NULL,
+    score        INTEGER NOT NULL,
     percentage   DECIMAL(5,2) NOT NULL,
-    passed       TINYINT(1) NOT NULL,
+    passed       BOOLEAN NOT NULL,
     started_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    completed_at DATETIME DEFAULT NULL,
-    FOREIGN KEY (quiz_id)    REFERENCES quizzes(id) ON DELETE CASCADE,
-    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+    completed_at TIMESTAMP DEFAULT NULL
+);
 
 -- ANNOUNCEMENTS
 CREATE TABLE IF NOT EXISTS announcements (
-    id        INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    author_id INT UNSIGNED NOT NULL,
-    course_id INT UNSIGNED DEFAULT NULL,
+    id        SERIAL PRIMARY KEY,
+    author_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    course_id INTEGER DEFAULT NULL REFERENCES courses(id) ON DELETE SET NULL,
     title     VARCHAR(255) NOT NULL,
     content   TEXT NOT NULL,
-    target    ENUM('all','students','instructors') NOT NULL DEFAULT 'all',
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE SET NULL
-) ENGINE=InnoDB;
+    target    VARCHAR(20) NOT NULL DEFAULT 'all' CHECK (target IN ('all','students','instructors')),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 
 -- FORUM POSTS
 CREATE TABLE IF NOT EXISTS forum_posts (
-    id        INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    course_id INT UNSIGNED NOT NULL,
-    author_id INT UNSIGNED NOT NULL,
+    id        SERIAL PRIMARY KEY,
+    course_id INTEGER NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+    author_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     title     VARCHAR(255) NOT NULL,
     content   TEXT NOT NULL,
-    is_pinned TINYINT(1) NOT NULL DEFAULT 0,
+    is_pinned BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
-    FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+DROP TRIGGER IF EXISTS trg_forum_posts_updated_at ON forum_posts;
+CREATE TRIGGER trg_forum_posts_updated_at
+    BEFORE UPDATE ON forum_posts
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
 
 -- FORUM REPLIES
 CREATE TABLE IF NOT EXISTS forum_replies (
-    id        INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    post_id   INT UNSIGNED NOT NULL,
-    author_id INT UNSIGNED NOT NULL,
+    id        SERIAL PRIMARY KEY,
+    post_id   INTEGER NOT NULL REFERENCES forum_posts(id) ON DELETE CASCADE,
+    author_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     content   TEXT NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (post_id)   REFERENCES forum_posts(id) ON DELETE CASCADE,
-    FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 
 -- NOTIFICATIONS
 CREATE TABLE IF NOT EXISTS notifications (
-    id        INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id   INT UNSIGNED NOT NULL,
+    id        SERIAL PRIMARY KEY,
+    user_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     message   VARCHAR(500) NOT NULL,
     type      VARCHAR(50) NOT NULL,
     link      VARCHAR(255) DEFAULT NULL,
-    is_read   TINYINT(1) NOT NULL DEFAULT 0,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+    is_read   BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

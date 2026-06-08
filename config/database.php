@@ -8,7 +8,7 @@ class Database
     public static function getConnection(): PDO
     {
         if (self::$instance === null) {
-            $dsn = 'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4';
+            $dsn = 'pgsql:host=' . DB_HOST . ';dbname=' . DB_NAME;
             $options = [
                 PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
@@ -21,7 +21,7 @@ class Database
             echo "DB DEBUG: user=" . DB_USER . "\n";
             echo "DB DEBUG: pass length=" . strlen(DB_PASS) . "\n";
             echo "DB DEBUG: RENDER=" . ($_ENV['RENDER'] ?? 'not set') . "\n";
-            echo "DB DEBUG: MYSQL_HOST=" . ($_ENV['MYSQL_HOST'] ?? 'not set') . "\n";
+            echo "DB DEBUG: PGHOST=" . ($_ENV['PGHOST'] ?? 'not set') . "\n";
             echo "</pre>";
             
             try {

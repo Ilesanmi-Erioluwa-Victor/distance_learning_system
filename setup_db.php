@@ -22,11 +22,75 @@ $pdo = Database::getConnection();
 
 echo "Setting up database schema...\n";
 
+function splitSqlStatements(string $sql): array {
+    $statements = [];
+    $current = '';
+    $inDollar = false;
+    $dollarTag = '';
+    $inSingleQuote = false;
+    $inLineComment = false;
+    $len = strlen($sql);
+
+    for ($i = 0; $i < $len; $i++) {
+        $ch = $sql[$i];
+        $next = $i + 1 < $len ? $sql[$i + 1] : '';
+
+        if (!$inDollar && !$inSingleQuote && !$inLineComment && $ch === '-' && $next === '-') {
+            $inLineComment = true;
+            $i++;
+            continue;
+        }
+        if ($inLineComment) {
+            if ($ch === "\n") $inLineComment = false;
+            continue;
+        }
+
+        if (!$inDollar && !$inLineComment && $ch === "'") {
+            $inSingleQuote = !$inSingleQuote;
+            $current .= $ch;
+            continue;
+        }
+
+        if (!$inSingleQuote && !$inLineComment && $ch === '$') {
+            $j = $i + 1;
+            $tag = '';
+            while ($j < $len && $sql[$j] !== '$' && preg_match('/[a-zA-Z0-9_]/', $sql[$j])) {
+                $tag .= $sql[$j];
+                $j++;
+            }
+            if ($j < $len && $sql[$j] === '$') {
+                if (!$inDollar) {
+                    $inDollar = true;
+                    $dollarTag = $tag;
+                } elseif ($tag === $dollarTag) {
+                    $inDollar = false;
+                    $dollarTag = '';
+                }
+                $current .= '$' . $tag . '$';
+                $i = $j;
+                continue;
+            }
+        }
+
+        if (!$inDollar && !$inSingleQuote && !$inLineComment && $ch === ';') {
+            $trimmed = trim($current);
+            if ($trimmed !== '') $statements[] = $trimmed;
+            $current = '';
+            continue;
+        }
+
+        $current .= $ch;
+    }
+
+    $trimmed = trim($current);
+    if ($trimmed !== '') $statements[] = $trimmed;
+
+    return $statements;
+}
+
 $sql = file_get_contents(__DIR__ . '/config/schema.sql');
 
-// Remove comments and split by semicolon more carefully
-$sql = preg_replace('/--.*$/m', '', $sql); // Remove -- comments
-$statements = preg_split('/;\s*\n/', $sql);
+$statements = splitSqlStatements($sql);
 
 echo "DEBUG: Found " . count($statements) . " statements\n";
 
@@ -34,8 +98,6 @@ $success = 0;
 $failed = 0;
 
 foreach ($statements as $i => $stmt) {
-    $stmt = trim($stmt);
-    if (empty($stmt)) continue;
     echo "DEBUG [$i]: " . substr($stmt, 0, 80) . "...\n";
     try {
         $pdo->exec($stmt);
@@ -60,8 +122,9 @@ if ($failed === 0) {
 
     foreach ($users as $u) {
         $stmt = $pdo->prepare("
-            INSERT IGNORE INTO users (first_name, last_name, email, password, role, is_active, is_verified)
+            INSERT INTO users (first_name, last_name, email, password, role, is_active, is_verified)
             VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT (email) DO NOTHING
         ");
         $stmt->execute($u);
     }
@@ -94,7 +157,6 @@ if ($failed === 0) {
         $stmt = $pdo->prepare("
             INSERT INTO courses (instructor_id, title, description, category, level, duration, is_published)
             VALUES (?, ?, ?, ?, ?, ?, 1)
-            ON DUPLICATE KEY UPDATE title = title
         ");
         $stmt->execute($c);
     }
@@ -140,8 +202,9 @@ if ($failed === 0) {
     // Seed enrollments
     foreach (array_slice($courseIds, 0, 2) as $courseId) {
         $stmt = $pdo->prepare("
-            INSERT IGNORE INTO enrollments (student_id, course_id)
+            INSERT INTO enrollments (student_id, course_id)
             VALUES (?, ?)
+            ON CONFLICT (student_id, course_id) DO NOTHING
         ");
         $stmt->execute([$studentId, $courseId]);
     }
