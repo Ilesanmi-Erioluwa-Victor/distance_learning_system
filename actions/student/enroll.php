@@ -23,8 +23,9 @@ if ($stmt->fetch()) {
     redirect('/student/courses.php');
 }
 
-$stmt = $pdo->prepare("INSERT INTO enrollments (student_id, course_id) VALUES (?, ?)");
-$stmt->execute([$uid, $courseId]);
+$currentSessionId = $pdo->query("SELECT id FROM academic_sessions WHERE is_current = TRUE")->fetchColumn();
+$stmt = $pdo->prepare("INSERT INTO enrollments (student_id, course_id, academic_session_id) VALUES (?, ?, ?)");
+$stmt->execute([$uid, $courseId, $currentSessionId ?: null]);
 
 createNotification((int)$course['instructor_id'], $uid . ' enrolled in your course: ' . $course['title'], 'enrollment', '/instructor/students.php');
 

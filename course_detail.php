@@ -11,8 +11,14 @@ $pdo = Database::getConnection();
 
 // Course
 $stmt = $pdo->prepare("
-    SELECT c.*, u.first_name, u.last_name, u.bio, u.profile_photo
-    FROM courses c JOIN users u ON c.instructor_id = u.id
+    SELECT c.*, u.first_name, u.last_name, u.bio, u.profile_photo,
+           d.name AS department_name,
+           sem.name AS semester_name, s.name AS session_name
+    FROM courses c
+    JOIN users u ON c.instructor_id = u.id
+    LEFT JOIN departments d ON c.department_id = d.id
+    LEFT JOIN semesters sem ON c.semester_id = sem.id
+    LEFT JOIN academic_sessions s ON c.academic_session_id = s.id
     WHERE c.id = ? AND c.is_published
 ");
 $stmt->execute([$id]);
@@ -96,7 +102,9 @@ include __DIR__ . '/includes/header.php';
             <div class="card-body">
                 <div class="mb-2">
                     <span class="badge badge-info"><?php echo htmlspecialchars($course['level']); ?></span>
-                    <span class="badge badge-muted"><?php echo htmlspecialchars($course['category']); ?></span>
+                    <span class="badge badge-muted"><?php echo htmlspecialchars($course['department_name'] ?? ''); ?></span>
+                    <span class="badge badge-muted"><?php echo htmlspecialchars($course['semester_name'] ?? ''); ?> Semester</span>
+                    <span class="badge badge-muted"><?php echo htmlspecialchars($course['session_name'] ?? ''); ?></span>
                     <?php if (!empty($course['duration'])): ?>
                         <span class="badge badge-muted">⏱ <?php echo htmlspecialchars($course['duration']); ?></span>
                     <?php endif; ?>

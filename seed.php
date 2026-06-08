@@ -30,18 +30,41 @@ $pdo = Database::getConnection();
 echo "Seeding database...\n";
 
 /* =========================================================
+   FACULTIES & DEPARTMENTS & LEVELS
+========================================================= */
+$pdo->exec("INSERT INTO faculties (name) VALUES ('Faculty of Science') ON CONFLICT (name) DO NOTHING");
+$pdo->exec("INSERT INTO faculties (name) VALUES ('Faculty of Engineering') ON CONFLICT (name) DO NOTHING");
+$pdo->exec("INSERT INTO faculties (name) VALUES ('Faculty of Management Sciences') ON CONFLICT (name) DO NOTHING");
+
+$stmt = $pdo->query("SELECT id, name FROM faculties");
+$facs = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+$pdo->prepare("INSERT INTO departments (faculty_id, name) VALUES (?, 'Computer Science') ON CONFLICT (name) DO NOTHING")->execute([$facs['Faculty of Science'] ?? 1]);
+$pdo->prepare("INSERT INTO departments (faculty_id, name) VALUES (?, 'Mathematics') ON CONFLICT (name) DO NOTHING")->execute([$facs['Faculty of Science'] ?? 1]);
+$pdo->prepare("INSERT INTO departments (faculty_id, name) VALUES (?, 'Electrical Engineering') ON CONFLICT (name) DO NOTHING")->execute([$facs['Faculty of Engineering'] ?? 2]);
+$pdo->prepare("INSERT INTO departments (faculty_id, name) VALUES (?, 'Mechanical Engineering') ON CONFLICT (name) DO NOTHING")->execute([$facs['Faculty of Engineering'] ?? 2]);
+$pdo->prepare("INSERT INTO departments (faculty_id, name) VALUES (?, 'Business Administration') ON CONFLICT (name) DO NOTHING")->execute([$facs['Faculty of Management Sciences'] ?? 3]);
+echo "- Faculties & departments inserted\n";
+
+$pdo->exec("INSERT INTO levels (name) VALUES ('ND1'), ('ND2'), ('HND1'), ('HND2') ON CONFLICT (name) DO NOTHING");
+echo "- Levels inserted\n";
+
+$pdo->exec("INSERT INTO semesters (name, sort_order) VALUES ('First', 1), ('Second', 2) ON CONFLICT (name) DO NOTHING");
+$pdo->exec("INSERT INTO academic_sessions (name, is_current) VALUES ('2024/2025', TRUE) ON CONFLICT (name) DO NOTHING");
+echo "- Semesters & session inserted\n";
+
+/* =========================================================
    USERS
 ========================================================= */
 $users = [
-    ['Admin', 'User', 'admin@dspoly.edu.ng', password_hash('Admin@123', PASSWORD_BCRYPT), 'admin', 1, 1],
-    ['Dr. Felix', 'Elugwa', 'instructor@dspoly.edu.ng', password_hash('Instructor@123', PASSWORD_BCRYPT), 'instructor', 1, 1],
-    ['Demo', 'Student', 'student@dspoly.edu.ng', password_hash('Student@123', PASSWORD_BCRYPT), 'student', 1, 1],
+    ['Admin', 'User', 'admin@dspoly.edu.ng', password_hash('Admin@123', PASSWORD_BCRYPT), 'admin', 1, 1, null, null, null],
+    ['Dr. Felix', 'Elugwa', 'instructor@dspoly.edu.ng', password_hash('Instructor@123', PASSWORD_BCRYPT), 'instructor', 1, 1, null, null, null],
+    ['Demo', 'Student', 'student@dspoly.edu.ng', password_hash('Student@123', PASSWORD_BCRYPT), 'student', 1, 1, null, null, null],
 ];
 
 foreach ($users as $u) {
     $stmt = $pdo->prepare("
-        INSERT INTO users (first_name, last_name, email, password, role, is_active, is_verified)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO users (first_name, last_name, email, password, role, is_active, is_verified, faculty_id, department_id, student_level)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT (email) DO NOTHING
     ");
     $stmt->execute($u);
@@ -59,26 +82,38 @@ $stmt->execute(['student@dspoly.edu.ng']);
 $studentId = $stmt->fetchColumn();
 
 /* =========================================================
+   GET DEPARTMENT / SEMESTER / SESSION IDS
+========================================================= */
+$stmt = $pdo->query("SELECT id, name FROM departments WHERE name IN ('Computer Science', 'Mathematics', 'Business Administration')");
+$depts = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+
+$stmt = $pdo->query("SELECT id, name FROM semesters");
+$semesters = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+
+$stmt = $pdo->query("SELECT id FROM academic_sessions WHERE is_current = TRUE");
+$sessionId = (int) $stmt->fetchColumn();
+
+/* =========================================================
    COURSES
 ========================================================= */
 $courses = [
     [$instructorId, 'Introduction to Computer Science',
      'A foundational course covering the basics of computing, algorithms, and problem solving.',
-     'Computer Science', 'Beginner', '8 weeks'],
+     ($depts['Computer Science'] ?? 1), 'ND1', ($semesters['First'] ?? 1), $sessionId, '8 weeks'],
 
     [$instructorId, 'Web Development with HTML & CSS',
      'Learn to build modern, responsive websites from scratch using HTML5 and CSS3.',
-     'Web Development', 'Beginner', '6 weeks'],
+     ($depts['Computer Science'] ?? 1), 'ND2', ($semesters['First'] ?? 1), $sessionId, '6 weeks'],
 
     [$instructorId, 'Database Management Systems',
      'Understand relational databases, SQL, normalization, and real-world database design.',
-     'Database', 'Intermediate', '10 weeks'],
+     ($depts['Computer Science'] ?? 1), 'HND1', ($semesters['Second'] ?? 2), $sessionId, '10 weeks'],
 ];
 
 foreach ($courses as $c) {
     $stmt = $pdo->prepare("
-        INSERT INTO courses (instructor_id, title, description, category, level, duration, is_published)
-        VALUES (?, ?, ?, ?, ?, ?, TRUE)
+        INSERT INTO courses (instructor_id, title, description, department_id, level, semester_id, academic_session_id, duration, is_published)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRUE)
     ");
     $stmt->execute($c);
 }
@@ -129,13 +164,14 @@ echo "- Modules & lessons inserted\n";
 /* =========================================================
    ENROLLMENTS
 ========================================================= */
+$currentSessionId = $pdo->query("SELECT id FROM academic_sessions WHERE is_current = TRUE")->fetchColumn();
 foreach (array_slice($courseIds, 0, 2) as $courseId) {
     $stmt = $pdo->prepare("
-        INSERT INTO enrollments (student_id, course_id)
-        VALUES (?, ?)
+        INSERT INTO enrollments (student_id, course_id, academic_session_id)
+        VALUES (?, ?, ?)
         ON CONFLICT (student_id, course_id) DO NOTHING
     ");
-    $stmt->execute([$studentId, $courseId]);
+    $stmt->execute([$studentId, $courseId, $currentSessionId ?: null]);
 }
 echo "- Enrollments inserted\n";
 

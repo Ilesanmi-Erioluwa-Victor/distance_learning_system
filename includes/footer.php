@@ -4,7 +4,7 @@
 <footer class="site-footer">
     <div class="container">
         <p>&copy; <?php echo date('Y'); ?> Delta State Polytechnic, Otefe-Oghara, Delta State, Nigeria.</p>
-        <p>Web-Based Distance Learning System (WBDLS) — Final Year Project</p>
+       
     </div>
 </footer>
 

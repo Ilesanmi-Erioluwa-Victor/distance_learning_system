@@ -8,8 +8,10 @@ requireRole('instructor');
 $pdo = Database::getConnection();
 $uid = (int) getCurrentUser()['id'];
 $stmt = $pdo->prepare("
-    SELECT c.*, (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) as enroll_count
-    FROM courses c WHERE c.instructor_id = ? ORDER BY c.created_at DESC
+    SELECT c.*, d.name as dept_name, (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) as enroll_count
+    FROM courses c
+    LEFT JOIN departments d ON c.department_id = d.id
+    WHERE c.instructor_id = ? ORDER BY c.created_at DESC
 ");
 $stmt->execute([$uid]);
 $courses = $stmt->fetchAll();
@@ -43,7 +45,7 @@ include __DIR__ . '/../includes/header.php';
                         <?php endif; ?>
                     </div>
                     <h3 class="mt-1"><?php echo htmlspecialchars($c['title']); ?></h3>
-                    <p><?php echo htmlspecialchars($c['category']); ?> · <?php echo (int)$c['enroll_count']; ?> enrolled</p>
+                    <p><?php echo htmlspecialchars($c['dept_name'] ?? 'N/A'); ?> · <?php echo (int)$c['enroll_count']; ?> enrolled</p>
                     <div class="d-flex gap-1 mt-2">
                         <a href="<?php echo BASE_URL; ?>/instructor/course_builder.php?course_id=<?php echo (int)$c['id']; ?>" class="btn btn-primary btn-sm">Build</a>
                         <a href="<?php echo BASE_URL; ?>/instructor/edit_course.php?course_id=<?php echo (int)$c['id']; ?>" class="btn btn-outline btn-sm">Edit</a>

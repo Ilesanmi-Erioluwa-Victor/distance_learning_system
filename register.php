@@ -8,6 +8,10 @@ if (isLoggedIn()) {
     redirect('/' . $_SESSION['user_role'] . '/dashboard.php');
 }
 
+$pdo = Database::getConnection();
+$faculties = $pdo->query("SELECT id, name FROM faculties ORDER BY name")->fetchAll();
+$levels    = $pdo->query("SELECT name FROM levels ORDER BY id")->fetchAll();
+
 $pageTitle = 'Register';
 ?>
 <!DOCTYPE html>
@@ -70,6 +74,32 @@ $pageTitle = 'Register';
                     </label>
                 </div>
             </div>
+            <div class="student-fields" id="studentFields" style="display:none;">
+                <div class="form-group">
+                    <label class="form-label">Faculty</label>
+                    <select name="faculty_id" id="facultySelect" class="form-input">
+                        <option value="">Select Faculty</option>
+                        <?php foreach ($faculties as $f): ?>
+                            <option value="<?php echo $f['id']; ?>"><?php echo htmlspecialchars($f['name']); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Department</label>
+                    <select name="department_id" id="departmentSelect" class="form-input" disabled>
+                        <option value="">Select Faculty First</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Level</label>
+                    <select name="student_level" class="form-input">
+                        <option value="">Select Level</option>
+                        <?php foreach ($levels as $l): ?>
+                            <option value="<?php echo htmlspecialchars($l['name']); ?>"><?php echo htmlspecialchars($l['name']); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
             <button type="submit" class="btn btn-primary btn-block btn-lg">Create Account</button>
         </form>
 
@@ -78,6 +108,52 @@ $pageTitle = 'Register';
         </div>
     </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var roleRadios = document.querySelectorAll('input[name="role"]');
+    var studentFields = document.getElementById('studentFields');
+    var facultySelect = document.getElementById('facultySelect');
+    var departmentSelect = document.getElementById('departmentSelect');
+
+    function toggleStudentFields() {
+        var isStudent = document.querySelector('input[name="role"]:checked').value === 'student';
+        studentFields.style.display = isStudent ? 'block' : 'none';
+        var selects = studentFields.querySelectorAll('select');
+        for (var i = 0; i < selects.length; i++) {
+            selects[i].disabled = !isStudent;
+        }
+    }
+
+    for (var i = 0; i < roleRadios.length; i++) {
+        roleRadios[i].addEventListener('change', toggleStudentFields);
+    }
+    toggleStudentFields();
+
+    facultySelect.addEventListener('change', function () {
+        var fid = this.value;
+        if (!fid) {
+            departmentSelect.innerHTML = '<option value="">Select Faculty First</option>';
+            departmentSelect.disabled = true;
+            return;
+        }
+        departmentSelect.disabled = true;
+        departmentSelect.innerHTML = '<option value="">Loading...</option>';
+
+        fetch('<?php echo BASE_URL; ?>/actions/auth/get_departments.php?faculty_id=' + fid)
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                departmentSelect.innerHTML = '<option value="">Select Department</option>';
+                for (var j = 0; j < data.length; j++) {
+                    departmentSelect.innerHTML += '<option value="' + data[j].id + '">' + data[j].name + '</option>';
+                }
+                departmentSelect.disabled = false;
+            })
+            .catch(function () {
+                departmentSelect.innerHTML = '<option value="">Error loading departments</option>';
+            });
+    });
+});
+</script>
 <script src="<?php echo BASE_URL; ?>/assets/js/main.js"></script>
 </body>
 </html>

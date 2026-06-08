@@ -8,13 +8,15 @@ validateCsrf();
 
 $uid = (int)currentUserId();
 $title = sanitize($_POST['title'] ?? '');
-$category = sanitize($_POST['category'] ?? '');
-$level = sanitize($_POST['level'] ?? 'Beginner');
+$departmentId = (int)($_POST['department_id'] ?? 0);
+$level = sanitize($_POST['level'] ?? '');
+$semesterId = (int)($_POST['semester_id'] ?? 0);
+$academicSessionId = (int)($_POST['academic_session_id'] ?? 0);
 $duration = sanitize($_POST['duration'] ?? '');
 $description = sanitize($_POST['description'] ?? '');
 
-if (!$title || !$category || !$description) {
-    setFlash('error', 'Title, category and description are required.');
+if (!$title || !$departmentId || !$level || !$semesterId || !$academicSessionId || !$description) {
+    setFlash('error', 'All required fields must be filled.');
     redirect('/instructor/create_course.php');
 }
 
@@ -27,10 +29,10 @@ if (!empty($_FILES['thumbnail']['name'])) {
 
 $pdo = Database::getConnection();
 $stmt = $pdo->prepare("
-    INSERT INTO courses (instructor_id, title, description, thumbnail, level, category, duration, is_published)
-    VALUES (?, ?, ?, ?, ?, ?, ?, FALSE)
+    INSERT INTO courses (instructor_id, title, description, thumbnail, level, department_id, semester_id, academic_session_id, duration, is_published)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, FALSE)
 ");
-$stmt->execute([$uid, $title, $description, $thumbnail, $level, $category, $duration]);
+$stmt->execute([$uid, $title, $description, $thumbnail, $level, $departmentId, $semesterId, $academicSessionId, $duration]);
 $cid = (int) $pdo->lastInsertId();
 
 setFlash('success', 'Course created! Add modules and lessons next.');

@@ -14,6 +14,16 @@ $password = $_POST['password'] ?? '';
 $confirm  = $_POST['confirm_password'] ?? '';
 $role = $_POST['role'] ?? 'student';
 
+if ($role === 'student') {
+    $facultyId    = $_POST['faculty_id'] ?? null;
+    $departmentId = $_POST['department_id'] ?? null;
+    $studentLevel = $_POST['student_level'] ?? null;
+} else {
+    $facultyId    = null;
+    $departmentId = null;
+    $studentLevel = null;
+}
+
 if (!$first || !$last || !$email || !$password || !$confirm) {
     setFlash('error', 'All fields are required.');
     redirect('/register.php');
@@ -44,10 +54,10 @@ $otp  = generateOTP(6);
 $otpExpires = (new DateTime('+10 minutes'))->format('Y-m-d H:i:s');
 
 $stmt = $pdo->prepare("
-    INSERT INTO users (first_name, last_name, email, password, role, is_active, is_verified, otp_code, otp_expires_at)
-    VALUES (?, ?, ?, ?, ?, 1, 0, ?, ?)
+    INSERT INTO users (first_name, last_name, email, password, role, is_active, is_verified, otp_code, otp_expires_at, faculty_id, department_id, student_level)
+    VALUES (?, ?, ?, ?, ?, 1, 0, ?, ?, ?, ?, ?)
 ");
-$stmt->execute([$first, $last, $email, $hash, $role, $otp, $otpExpires]);
+$stmt->execute([$first, $last, $email, $hash, $role, $otp, $otpExpires, $facultyId, $departmentId, $studentLevel]);
 
 // Try to send email
 $body = getOtpEmailHtml($first, $otp);

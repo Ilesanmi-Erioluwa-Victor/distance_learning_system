@@ -33,9 +33,13 @@ $quizzesPublished = (int) $stmt->fetchColumn();
 
 // My courses
 $stmt = $pdo->prepare("
-    SELECT c.*, (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) as enroll_count,
+    SELECT c.*, d.name as dept_name, f.name as faculty_name,
+           (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) as enroll_count,
            (SELECT COUNT(*) FROM lessons l JOIN modules m ON l.module_id = m.id WHERE m.course_id = c.id) as lesson_count
-    FROM courses c WHERE c.instructor_id = ?
+    FROM courses c
+    LEFT JOIN departments d ON c.department_id = d.id
+    LEFT JOIN faculties f ON d.faculty_id = f.id
+    WHERE c.instructor_id = ?
     ORDER BY c.created_at DESC
 ");
 $stmt->execute([$uid]);
@@ -100,7 +104,7 @@ include __DIR__ . '/../includes/header.php';
                 <thead>
                     <tr>
                         <th>Title</th>
-                        <th>Category</th>
+                        <th>Department</th>
                         <th>Enrollments</th>
                         <th>Lessons</th>
                         <th>Status</th>
@@ -111,7 +115,7 @@ include __DIR__ . '/../includes/header.php';
                 <?php foreach ($courses as $c): ?>
                     <tr>
                         <td><strong><?php echo htmlspecialchars($c['title']); ?></strong></td>
-                        <td><?php echo htmlspecialchars($c['category']); ?></td>
+                        <td><?php echo htmlspecialchars($c['dept_name'] ?? 'N/A'); ?></td>
                         <td><?php echo (int)$c['enroll_count']; ?></td>
                         <td><?php echo (int)$c['lesson_count']; ?></td>
                         <td>

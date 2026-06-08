@@ -28,9 +28,11 @@ $latestUsers = $stmt->fetchAll();
 
 // Latest courses
 $stmt = $pdo->query("
-    SELECT c.*, u.first_name, u.last_name,
+    SELECT c.*, u.first_name, u.last_name, d.name as dept_name,
            (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) as enroll_count
-    FROM courses c JOIN users u ON c.instructor_id = u.id
+    FROM courses c
+    JOIN users u ON c.instructor_id = u.id
+    LEFT JOIN departments d ON c.department_id = d.id
     ORDER BY c.created_at DESC LIMIT 5
 ");
 $latestCourses = $stmt->fetchAll();
@@ -97,13 +99,13 @@ include __DIR__ . '/../includes/header.php';
     <h2>📚 Latest Courses</h2>
     <div class="table-wrapper">
         <table class="table">
-            <thead><tr><th>Title</th><th>Instructor</th><th>Category</th><th>Status</th><th>Enrolled</th></tr></thead>
+            <thead><tr><th>Title</th><th>Instructor</th><th>Department</th><th>Status</th><th>Enrolled</th></tr></thead>
             <tbody>
             <?php foreach ($latestCourses as $c): ?>
                 <tr>
                     <td><?php echo htmlspecialchars($c['title']); ?></td>
                     <td><?php echo htmlspecialchars($c['first_name'] . ' ' . $c['last_name']); ?></td>
-                    <td><?php echo htmlspecialchars($c['category']); ?></td>
+                    <td><?php echo htmlspecialchars($c['dept_name'] ?? 'N/A'); ?></td>
                     <td>
                         <?php if ($c['is_published']): ?>
                             <span class="badge badge-success">Published</span>

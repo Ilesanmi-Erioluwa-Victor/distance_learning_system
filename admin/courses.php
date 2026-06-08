@@ -7,9 +7,11 @@ requireRole('admin');
 
 $pdo = Database::getConnection();
 $stmt = $pdo->query("
-    SELECT c.*, u.first_name, u.last_name,
+    SELECT c.*, u.first_name, u.last_name, d.name as dept_name,
            (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) as enroll_count
-    FROM courses c JOIN users u ON c.instructor_id = u.id
+    FROM courses c
+    JOIN users u ON c.instructor_id = u.id
+    LEFT JOIN departments d ON c.department_id = d.id
     ORDER BY c.created_at DESC
 ");
 $courses = $stmt->fetchAll();
@@ -25,14 +27,14 @@ include __DIR__ . '/../includes/header.php';
 <div class="table-wrapper">
     <table class="table">
         <thead>
-            <tr><th>Title</th><th>Instructor</th><th>Category</th><th>Enrollments</th><th>Published</th><th>Created</th><th>Actions</th></tr>
+            <tr><th>Title</th><th>Instructor</th><th>Department</th><th>Enrollments</th><th>Published</th><th>Created</th><th>Actions</th></tr>
         </thead>
         <tbody>
         <?php foreach ($courses as $c): ?>
             <tr>
                 <td><strong><?php echo htmlspecialchars($c['title']); ?></strong></td>
                 <td><?php echo htmlspecialchars($c['first_name'] . ' ' . $c['last_name']); ?></td>
-                <td><?php echo htmlspecialchars($c['category']); ?></td>
+                <td><?php echo htmlspecialchars($c['dept_name'] ?? 'N/A'); ?></td>
                 <td><?php echo (int)$c['enroll_count']; ?></td>
                 <td>
                     <form method="post" action="<?php echo BASE_URL; ?>/actions/admin/toggle_course.php" style="display:inline;">

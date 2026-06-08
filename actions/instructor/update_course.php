@@ -15,8 +15,10 @@ $course = $stmt->fetch();
 if (!$course) { setFlash('error', 'Not found.'); redirect('/instructor/dashboard.php'); }
 
 $title = sanitize($_POST['title'] ?? '');
-$category = sanitize($_POST['category'] ?? '');
-$level = sanitize($_POST['level'] ?? 'Beginner');
+$departmentId = (int)($_POST['department_id'] ?? 0);
+$level = sanitize($_POST['level'] ?? '');
+$semesterId = (int)($_POST['semester_id'] ?? 0);
+$academicSessionId = (int)($_POST['academic_session_id'] ?? 0);
 $duration = sanitize($_POST['duration'] ?? '');
 $description = sanitize($_POST['description'] ?? '');
 
@@ -26,8 +28,8 @@ if (!empty($_FILES['thumbnail']['name'])) {
     if ($result['success']) $thumbnail = $result['path'];
 }
 
-$stmt = $pdo->prepare("UPDATE courses SET title=?, description=?, thumbnail=?, level=?, category=?, duration=? WHERE id=?");
-$stmt->execute([$title, $description, $thumbnail, $level, $category, $duration, $cid]);
+$stmt = $pdo->prepare("UPDATE courses SET title=?, description=?, thumbnail=?, level=?, department_id=?, semester_id=?, academic_session_id=?, duration=? WHERE id=?");
+$stmt->execute([$title, $description, $thumbnail, $level, $departmentId, $semesterId, $academicSessionId, $duration, $cid]);
 
 setFlash('success', 'Course updated.');
 redirect('/instructor/edit_course.php?course_id=' . $cid);

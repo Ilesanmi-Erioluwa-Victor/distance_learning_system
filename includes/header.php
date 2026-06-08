@@ -62,6 +62,11 @@ if ($currentUser) {
                 <a href="<?php echo BASE_URL; ?>/admin/users.php" class="sidebar-link"><span class="ico">👥</span> Users</a>
                 <a href="<?php echo BASE_URL; ?>/admin/courses.php" class="sidebar-link"><span class="ico">📚</span> Courses</a>
                 <a href="<?php echo BASE_URL; ?>/admin/enrollments.php" class="sidebar-link"><span class="ico">📋</span> Enrollments</a>
+                <a href="<?php echo BASE_URL; ?>/admin/faculties.php" class="sidebar-link"><span class="ico">🏛️</span> Faculties</a>
+                <a href="<?php echo BASE_URL; ?>/admin/departments.php" class="sidebar-link"><span class="ico">📂</span> Departments</a>
+                <a href="<?php echo BASE_URL; ?>/admin/levels.php" class="sidebar-link"><span class="ico">📊</span> Levels</a>
+                <a href="<?php echo BASE_URL; ?>/admin/semesters.php" class="sidebar-link"><span class="ico">🗓️</span> Semesters</a>
+                <a href="<?php echo BASE_URL; ?>/admin/academic_sessions.php" class="sidebar-link"><span class="ico">📅</span> Sessions</a>
                 <a href="<?php echo BASE_URL; ?>/admin/announcements.php" class="sidebar-link"><span class="ico">📢</span> Announcements</a>
             <?php endif; ?>
             <a href="<?php echo BASE_URL; ?>/actions/auth/logout.php" class="sidebar-link logout"><span class="ico">🚪</span> Logout</a>

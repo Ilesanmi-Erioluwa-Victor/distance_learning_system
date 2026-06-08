@@ -13,6 +13,16 @@ $stmt->execute([$courseId, $uid]);
 $course = $stmt->fetch();
 if (!$course) redirect('/instructor/dashboard.php');
 
+$departments = $pdo->query("
+    SELECT d.id, d.name, f.name AS faculty_name
+    FROM departments d
+    JOIN faculties f ON d.faculty_id = f.id
+    ORDER BY f.name, d.name
+")->fetchAll();
+$levels = $pdo->query("SELECT name FROM levels ORDER BY id")->fetchAll();
+$semesters = $pdo->query("SELECT * FROM semesters ORDER BY sort_order, name")->fetchAll();
+$sessions = $pdo->query("SELECT * FROM academic_sessions ORDER BY created_at DESC")->fetchAll();
+
 $pageTitle = 'Edit Course';
 include __DIR__ . '/../includes/header.php';
 ?>
@@ -33,29 +43,58 @@ include __DIR__ . '/../includes/header.php';
             </div>
             <div class="form-row">
                 <div class="form-group">
-                    <label class="form-label">Category</label>
-                    <select name="category" class="form-select">
-                        <option <?php echo $course['category']==='Computer Science'?'selected':''; ?>>Computer Science</option>
-                        <option <?php echo $course['category']==='Web Development'?'selected':''; ?>>Web Development</option>
-                        <option <?php echo $course['category']==='Database'?'selected':''; ?>>Database</option>
-                        <option <?php echo $course['category']==='Networking'?'selected':''; ?>>Networking</option>
-                        <option <?php echo $course['category']==='Software Engineering'?'selected':''; ?>>Software Engineering</option>
-                        <option <?php echo $course['category']==='Mathematics'?'selected':''; ?>>Mathematics</option>
-                        <option <?php echo $course['category']==='General Studies'?'selected':''; ?>>General Studies</option>
+                    <label class="form-label">Department *</label>
+                    <select name="department_id" class="form-select" required>
+                        <option value="">Select...</option>
+                        <?php foreach ($departments as $d): ?>
+                            <option value="<?php echo (int)$d['id']; ?>" <?php echo (int)$course['department_id'] === (int)$d['id'] ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($d['faculty_name'] . ' - ' . $d['name']); ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Level</label>
-                    <select name="level" class="form-select">
-                        <option <?php echo $course['level']==='Beginner'?'selected':''; ?>>Beginner</option>
-                        <option <?php echo $course['level']==='Intermediate'?'selected':''; ?>>Intermediate</option>
-                        <option <?php echo $course['level']==='Advanced'?'selected':''; ?>>Advanced</option>
+                    <label class="form-label">Level *</label>
+                    <select name="level" class="form-select" required>
+                        <option value="">Select...</option>
+                        <?php foreach ($levels as $l): ?>
+                            <option value="<?php echo htmlspecialchars($l['name']); ?>" <?php echo $course['level'] === $l['name'] ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($l['name']); ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
             </div>
-            <div class="form-group">
-                <label class="form-label">Duration</label>
-                <input type="text" name="duration" class="form-input" value="<?php echo htmlspecialchars($course['duration'] ?? ''); ?>">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Semester *</label>
+                    <select name="semester_id" class="form-select" required>
+                        <option value="">Select...</option>
+                        <?php foreach ($semesters as $sem): ?>
+                            <option value="<?php echo (int)$sem['id']; ?>" <?php echo (int)$course['semester_id'] === (int)$sem['id'] ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($sem['name']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Academic Session *</label>
+                    <select name="academic_session_id" class="form-select" required>
+                        <option value="">Select...</option>
+                        <?php foreach ($sessions as $s): ?>
+                            <option value="<?php echo (int)$s['id']; ?>" <?php echo (int)$course['academic_session_id'] === (int)$s['id'] ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($s['name']); ?>
+                                <?php if ($s['is_current']): ?> (Current)<?php endif; ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Duration</label>
+                    <input type="text" name="duration" class="form-input" value="<?php echo htmlspecialchars($course['duration'] ?? ''); ?>">
+                </div>
             </div>
             <div class="form-group">
                 <label class="form-label">Description</label>

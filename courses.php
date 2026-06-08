@@ -5,11 +5,11 @@ require_once __DIR__ . '/includes/functions.php';
 
 $pdo = Database::getConnection();
 
-$search  = trim($_GET['search'] ?? '');
-$cat     = trim($_GET['category'] ?? '');
-$level   = trim($_GET['level'] ?? '');
-$page    = max(1, (int)($_GET['page'] ?? 1));
-$perPage = 12;
+$search       = trim($_GET['search'] ?? '');
+$departmentId = (int)($_GET['department_id'] ?? 0);
+$level        = trim($_GET['level'] ?? '');
+$page         = max(1, (int)($_GET['page'] ?? 1));
+$perPage      = 12;
 
 $where = ["c.is_published"];
 $params = [];
@@ -19,9 +19,9 @@ if ($search !== '') {
     $params[] = "%$search%";
     $params[] = "%$search%";
 }
-if ($cat !== '') {
-    $where[] = "c.category = ?";
-    $params[] = $cat;
+if ($departmentId > 0) {
+    $where[] = "c.department_id = ?";
+    $params[] = $departmentId;
 }
 if ($level !== '') {
     $where[] = "c.level = ?";
@@ -39,9 +39,11 @@ $offset = ($page - 1) * $perPage;
 // Data
 $stmt = $pdo->prepare("
     SELECT c.*, u.first_name, u.last_name,
+           d.name AS department_name,
            (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) as enroll_count
     FROM courses c
     JOIN users u ON c.instructor_id = u.id
+    LEFT JOIN departments d ON c.department_id = d.id
     WHERE $whereSql
     ORDER BY c.created_at DESC
     LIMIT $perPage OFFSET $offset
@@ -49,7 +51,12 @@ $stmt = $pdo->prepare("
 $stmt->execute($params);
 $courses = $stmt->fetchAll();
 
-$categories = $pdo->query("SELECT DISTINCT category FROM courses ORDER BY category")->fetchAll(PDO::FETCH_COLUMN);
+$departments = $pdo->query("
+    SELECT d.id, d.name, f.name AS faculty_name
+    FROM departments d
+    JOIN faculties f ON d.faculty_id = f.id
+    ORDER BY f.name, d.name
+")->fetchAll();
 
 $pageTitle = 'Courses';
 include __DIR__ . '/includes/header.php';
@@ -66,12 +73,12 @@ include __DIR__ . '/includes/header.php';
             <input type="text" name="search" class="form-input" value="<?php echo htmlspecialchars($search); ?>" placeholder="Search courses...">
         </div>
         <div class="form-group mb-0">
-            <label class="form-label">Category</label>
-            <select name="category" class="form-select">
-                <option value="">All Categories</option>
-                <?php foreach ($categories as $catOpt): ?>
-                    <option value="<?php echo htmlspecialchars($catOpt); ?>" <?php echo $cat === $catOpt ? 'selected' : ''; ?>>
-                        <?php echo htmlspecialchars($catOpt); ?>
+            <label class="form-label">Department</label>
+            <select name="department_id" class="form-select">
+                <option value="">All Departments</option>
+                <?php foreach ($departments as $d): ?>
+                    <option value="<?php echo (int)$d['id']; ?>" <?php echo $departmentId === (int)$d['id'] ? 'selected' : ''; ?>>
+                        <?php echo htmlspecialchars($d['faculty_name'] . ' - ' . $d['name']); ?>
                     </option>
                 <?php endforeach; ?>
             </select>
@@ -80,9 +87,10 @@ include __DIR__ . '/includes/header.php';
             <label class="form-label">Level</label>
             <select name="level" class="form-select">
                 <option value="">All Levels</option>
-                <option value="Beginner" <?php echo $level==='Beginner'?'selected':''; ?>>Beginner</option>
-                <option value="Intermediate" <?php echo $level==='Intermediate'?'selected':''; ?>>Intermediate</option>
-                <option value="Advanced" <?php echo $level==='Advanced'?'selected':''; ?>>Advanced</option>
+                <option value="ND1" <?php echo $level==='ND1'?'selected':''; ?>>ND1</option>
+                <option value="ND2" <?php echo $level==='ND2'?'selected':''; ?>>ND2</option>
+                <option value="HND1" <?php echo $level==='HND1'?'selected':''; ?>>HND1</option>
+                <option value="HND2" <?php echo $level==='HND2'?'selected':''; ?>>HND2</option>
             </select>
         </div>
     </div>

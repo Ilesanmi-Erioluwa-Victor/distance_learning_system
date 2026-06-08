@@ -8,6 +8,45 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- FACULTIES
+CREATE TABLE IF NOT EXISTS faculties (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- DEPARTMENTS
+CREATE TABLE IF NOT EXISTS departments (
+    id SERIAL PRIMARY KEY,
+    faculty_id INTEGER NOT NULL REFERENCES faculties(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (name)
+);
+
+-- LEVELS
+CREATE TABLE IF NOT EXISTS levels (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- SEMESTERS
+CREATE TABLE IF NOT EXISTS semesters (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ACADEMIC SESSIONS
+CREATE TABLE IF NOT EXISTS academic_sessions (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(20) NOT NULL UNIQUE,
+    is_current BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 -- USERS
 CREATE TABLE IF NOT EXISTS users (
     id          SERIAL PRIMARY KEY,
@@ -23,6 +62,9 @@ CREATE TABLE IF NOT EXISTS users (
     is_verified BOOLEAN NOT NULL DEFAULT FALSE,
     otp_code    VARCHAR(10) DEFAULT NULL,
     otp_expires_at TIMESTAMP DEFAULT NULL,
+    faculty_id  INTEGER DEFAULT NULL REFERENCES faculties(id) ON DELETE SET NULL,
+    department_id INTEGER DEFAULT NULL REFERENCES departments(id) ON DELETE SET NULL,
+    student_level VARCHAR(10) DEFAULT NULL,
     created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -35,17 +77,19 @@ CREATE TRIGGER trg_users_updated_at
 
 -- COURSES
 CREATE TABLE IF NOT EXISTS courses (
-    id           SERIAL PRIMARY KEY,
-    instructor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    title        VARCHAR(255) NOT NULL,
-    description  TEXT NOT NULL,
-    thumbnail    VARCHAR(255) DEFAULT NULL,
-    level        VARCHAR(20) NOT NULL DEFAULT 'Beginner' CHECK (level IN ('Beginner','Intermediate','Advanced')),
-    category     VARCHAR(100) NOT NULL,
-    duration     VARCHAR(50) DEFAULT NULL,
-    is_published BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    id                 SERIAL PRIMARY KEY,
+    instructor_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title              VARCHAR(255) NOT NULL,
+    description        TEXT NOT NULL,
+    thumbnail          VARCHAR(255) DEFAULT NULL,
+    level              VARCHAR(10) NOT NULL DEFAULT 'ND1',
+    department_id      INTEGER DEFAULT NULL REFERENCES departments(id) ON DELETE SET NULL,
+    semester_id        INTEGER NOT NULL REFERENCES semesters(id),
+    academic_session_id INTEGER DEFAULT NULL REFERENCES academic_sessions(id),
+    duration           VARCHAR(50) DEFAULT NULL,
+    is_published       BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 DROP TRIGGER IF EXISTS trg_courses_updated_at ON courses;
@@ -79,13 +123,14 @@ CREATE TABLE IF NOT EXISTS lessons (
 
 -- ENROLLMENTS
 CREATE TABLE IF NOT EXISTS enrollments (
-    id          SERIAL PRIMARY KEY,
-    student_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    course_id   INTEGER NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
-    status      VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active','completed','dropped')),
-    progress    DECIMAL(5,2) NOT NULL DEFAULT 0.00,
-    enrolled_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id                  SERIAL PRIMARY KEY,
+    student_id          INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    course_id           INTEGER NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+    status              VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active','completed','dropped')),
+    progress            DECIMAL(5,2) NOT NULL DEFAULT 0.00,
+    academic_session_id INTEGER DEFAULT NULL REFERENCES academic_sessions(id),
+    enrolled_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (student_id, course_id)
 );
 
