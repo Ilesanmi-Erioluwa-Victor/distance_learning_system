@@ -22,19 +22,26 @@ $pdo = Database::getConnection();
 echo "Setting up database schema...\n";
 
 $sql = file_get_contents(__DIR__ . '/config/schema.sql');
-$statements = array_filter(array_map('trim', explode(';', $sql)));
+
+// Remove comments and split by semicolon more carefully
+$sql = preg_replace('/--.*$/m', '', $sql); // Remove -- comments
+$statements = preg_split('/;\s*\n/', $sql);
+
+echo "DEBUG: Found " . count($statements) . " statements\n";
 
 $success = 0;
 $failed = 0;
 
-foreach ($statements as $stmt) {
-    if (empty($stmt) || str_starts_with($stmt, '--')) continue;
+foreach ($statements as $i => $stmt) {
+    $stmt = trim($stmt);
+    if (empty($stmt)) continue;
+    echo "DEBUG [$i]: " . substr($stmt, 0, 80) . "...\n";
     try {
         $pdo->exec($stmt);
         $success++;
     } catch (PDOException $e) {
         $failed++;
-        echo "FAILED: " . $e->getMessage() . "\n";
+        echo "FAILED [$i]: " . $e->getMessage() . "\n";
     }
 }
 
