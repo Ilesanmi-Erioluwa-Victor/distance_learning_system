@@ -1,9 +1,0 @@
-services:
-  - type: web
-    name: distance-learning-system
-    runtime: php
-    buildCommand: composer install --no-dev
-    startCommand: php -S 0.0.0.0:10000
-    envVars:
-      - key: NIXPACKS_PHP_EXTENSIONS
-        value: pdo_pgsql pgsql
