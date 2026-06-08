@@ -59,15 +59,11 @@ $stmt = $pdo->prepare("
 ");
 $stmt->execute([$first, $last, $email, $hash, $role, $otp, $otpExpires, $facultyId, $departmentId, $studentLevel]);
 
-if (defined('MAIL_USER') && MAIL_USER !== '') {
-    $body = getOtpEmailHtml($first, $otp);
-    $err = sendEmail($email, $first, 'Verify your DSPoly e-Learning account', $body);
-    if ($err === '') {
-        setFlash('success', 'Account created! Check your email for the verification code.');
-        redirect('/verify_email.php?email=' . urlencode($email));
-    }
-    setFlash('error', 'Could not send verification email. Mail error: ' . $err);
-    redirect('/verify_email.php?email=' . urlencode($email));
+$body = getOtpEmailHtml($first, $otp);
+$err = sendEmail($email, $first, 'Verify your DSPoly e-Learning account', $body);
+if ($err === '') {
+    setFlash('success', 'Account created! Check your email for the verification code.');
+} else {
+    setFlash('error', 'Could not send verification email: ' . $err);
 }
-setFlash('error', 'Mail is not configured. Set MAIL_USER and MAIL_APP_PASSWORD on Render.');
 redirect('/verify_email.php?email=' . urlencode($email));

@@ -1,22 +1,34 @@
 <?php
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
 
 function sendEmail(string $toEmail, string $toName, string $subject, string $htmlBody): string
 {
-    if (MAIL_USER === '' || MAIL_APP_PASSWORD === '') {
-        return 'MAIL_USER or MAIL_APP_PASSWORD is empty';
+    // Use SendGrid HTTP API if configured (works on Render since it uses port 443)
+    $sgKey = defined('SENDGRID_API_KEY') ? SENDGRID_API_KEY : (getenv('SENDGRID_API_KEY') ?: '');
+    if ($sgKey !== '') {
+        return sendViaSendGrid($sgKey, $toEmail, $toName, $subject, $htmlBody);
     }
-    $mail = new PHPMailer(true);
+
+    // Fallback: try PHPMailer SMTP
+    $from = defined('MAIL_USER') ? MAIL_USER : (getenv('MAIL_USER') ?: '');
+    $pass = defined('MAIL_APP_PASSWORD') ? MAIL_APP_PASSWORD : (getenv('MAIL_APP_PASSWORD') ?: '');
+    if ($from === '' || $pass === '') {
+        return 'No mail service configured. Set SENDGRID_API_KEY or MAIL_USER/MAIL_APP_PASSWORD.';
+    }
+    return sendViaPHPMailer($from, $pass, $toEmail, $toName, $subject, $htmlBody);
+}
+
+function sendViaPHPMailer(string $from, string $pass, string $toEmail, string $toName, string $subject, string $htmlBody): string
+{
+    usePHPMailer();
+    $mail = new PHPMailer\PHPMailer\PHPMailer(true);
     try {
         $mail->isSMTP();
         $mail->SMTPAuth   = true;
-        $mail->Username   = MAIL_USER;
-        $mail->Password   = MAIL_APP_PASSWORD;
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Username   = $from;
+        $mail->Password   = $pass;
+        $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
         $mail->Port       = 587;
         $mail->Host       = 'smtp.gmail.com';
-
         $mail->SMTPOptions = [
             'ssl' => [
                 'verify_peer'       => false,
@@ -24,18 +36,59 @@ function sendEmail(string $toEmail, string $toName, string $subject, string $htm
                 'allow_self_signed' => true,
             ],
         ];
-
-        $mail->setFrom(MAIL_USER, 'DSPoly e-Learning Portal');
+        $mail->setFrom($from, 'DSPoly e-Learning Portal');
         $mail->addAddress($toEmail, $toName);
         $mail->isHTML(true);
         $mail->Subject = $subject;
         $mail->Body    = $htmlBody;
-
         $mail->send();
         return '';
     } catch (Exception $e) {
         return $mail->ErrorInfo;
     }
+}
+
+function sendViaSendGrid(string $apiKey, string $toEmail, string $toName, string $subject, string $htmlBody): string
+{
+    $from = defined('MAIL_USER') ? MAIL_USER : (getenv('MAIL_USER') ?: 'ilesanmierioluwavictor@gmail.com');
+
+    $payload = json_encode([
+        'personalizations' => [
+            ['to' => [['email' => $toEmail, 'name' => $toName]]],
+        ],
+        'from' => ['email' => $from, 'name' => 'DSPoly e-Learning Portal'],
+        'subject' => $subject,
+        'content' => [['type' => 'text/html', 'value' => $htmlBody]],
+    ]);
+
+    $ch = curl_init('https://api.sendgrid.com/v3/mail/send');
+    curl_setopt_array($ch, [
+        CURLOPT_HTTPHEADER => [
+            'Authorization: Bearer ' . $apiKey,
+            'Content-Type: application/json',
+        ],
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => $payload,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 15,
+    ]);
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $error = curl_error($ch);
+    curl_close($ch);
+
+    if ($error) return 'cURL error: ' . $error;
+    if ($httpCode >= 200 && $httpCode < 300) return '';
+    return "SendGrid error (HTTP $httpCode): " . $response;
+}
+
+function usePHPMailer(): void
+{
+    static $loaded = false;
+    if ($loaded) return;
+    $autoload = __DIR__ . '/../vendor/autoload.php';
+    if (file_exists($autoload)) require_once $autoload;
+    $loaded = true;
 }
 
 function getOtpEmailHtml(string $firstName, string $otp): string
