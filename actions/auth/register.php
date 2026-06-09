@@ -59,6 +59,12 @@ $stmt = $pdo->prepare("
 ");
 $stmt->execute([$first, $last, $email, $hash, $role, $otp, $otpExpires, $facultyId, $departmentId, $studentLevel]);
 
+// Verify OTP was stored
+$verifyStmt = $pdo->prepare("SELECT id, otp_code FROM users WHERE email = ?");
+$verifyStmt->execute([$email]);
+$inserted = $verifyStmt->fetch();
+error_log("REGISTER: created user id={$inserted['id']} email=$email otp_stored={$inserted['otp_code']}");
+
 $body = getOtpEmailHtml($first, $otp);
 $err = sendEmail($email, $first, 'Verify your DSPoly e-Learning account', $body);
 if ($err === '') {
