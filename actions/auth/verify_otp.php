@@ -29,7 +29,11 @@ $stmt->execute([$email, $otp]);
 $user = $stmt->fetch();
 
 if (!$user) {
-    setFlash('error', 'Invalid or expired code.');
+    $debug = '';
+    if ($check) {
+        $debug = ' | DB has OTP=' . var_export($check['otp_code'], true) . ' Submitted=' . var_export($otp, true);
+    }
+    setFlash('error', 'Invalid or expired code.' . $debug);
     redirect('/verify_email.php?email=' . urlencode($email));
 }
 
